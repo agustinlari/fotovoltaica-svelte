@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { Estructura } from '../api';
   import { apiGet, apiPost, apiPut, apiDelete } from '../api';
-  import { formatDdMmYyyyFromIso, toIsoMidnight } from '../date';
+  import { formatDdMmYyyyFromIso, formatYyyyMmDdFromIso, toIsoMidnight } from '../date';
   import ProtectedRoute from './ProtectedRoute.svelte';
 
   type State = {
@@ -56,7 +56,11 @@
   }
 
   function openEditModal(estructura: Estructura) {
-    editEstructura = { ...estructura };
+    editEstructura = { 
+      ...estructura,
+      // Convertir fecha ISO a formato YYYY-MM-DD para el input
+      FechaDescarga: estructura.FechaDescarga ? formatYyyyMmDdFromIso(estructura.FechaDescarga) : null
+    };
     state.selectedEstructura = estructura;
     state.showEditModal = true;
   }
@@ -73,7 +77,7 @@
       state.isSubmitting = true;
       // Procesar fecha si existe
       if (newEstructura.FechaDescarga) {
-        newEstructura.FechaDescarga = toIsoMidnight(newEstructura.FechaDescarga as string);
+        newEstructura.FechaDescarga = toIsoMidnight(newEstructura.FechaDescarga);
       }
       
       const created = await apiPost<Estructura>('/estructura', newEstructura);
@@ -93,7 +97,7 @@
       state.isSubmitting = true;
       // Procesar fecha si existe
       if (editEstructura.FechaDescarga) {
-        editEstructura.FechaDescarga = toIsoMidnight(editEstructura.FechaDescarga as string);
+        editEstructura.FechaDescarga = toIsoMidnight(editEstructura.FechaDescarga);
       }
       
       await apiPut(`/estructura/${state.selectedEstructura.id}`, editEstructura);

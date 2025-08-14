@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { Camion } from '../api';
   import { apiGet, apiPost, apiPut, apiDelete } from '../api';
-  import { formatDdMmYyyyFromIso, toIsoMidnight } from '../date';
+  import { formatDdMmYyyyFromIso, formatYyyyMmDdFromIso, toIsoMidnight } from '../date';
   import ProtectedRoute from './ProtectedRoute.svelte';
 
   type State = {
@@ -56,7 +56,11 @@
   }
 
   function openEditModal(camion: Camion) {
-    editCamion = { ...camion };
+    editCamion = { 
+      ...camion,
+      // Convertir fecha ISO a formato YYYY-MM-DD para el input
+      FechaDescarga: camion.FechaDescarga ? formatYyyyMmDdFromIso(camion.FechaDescarga) : null
+    };
     state.selectedCamion = camion;
     state.showEditModal = true;
   }
@@ -73,7 +77,7 @@
       state.isSubmitting = true;
       // Procesar fecha si existe
       if (newCamion.FechaDescarga) {
-        newCamion.FechaDescarga = toIsoMidnight(newCamion.FechaDescarga as string);
+        newCamion.FechaDescarga = toIsoMidnight(newCamion.FechaDescarga);
       }
       
       const created = await apiPost<Camion>('/camiones', newCamion);
@@ -93,7 +97,7 @@
       state.isSubmitting = true;
       // Procesar fecha si existe
       if (editCamion.FechaDescarga) {
-        editCamion.FechaDescarga = toIsoMidnight(editCamion.FechaDescarga as string);
+        editCamion.FechaDescarga = toIsoMidnight(editCamion.FechaDescarga);
       }
       
       await apiPut(`/camiones/${state.selectedCamion.id}`, editCamion);
