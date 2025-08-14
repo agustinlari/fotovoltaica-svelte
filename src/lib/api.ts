@@ -1,4 +1,20 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
+// Detectar automáticamente la URL base según el entorno
+function getApiBase(): string {
+  // Si hay una variable de entorno definida, usarla
+  if (import.meta.env.VITE_API_BASE) {
+    return import.meta.env.VITE_API_BASE;
+  }
+  
+  // Si estamos en producción (usando HTTPS), usar la URL de producción
+  if (window.location.protocol === 'https:' && window.location.hostname === 'aplicaciones.osmos.es') {
+    return `${window.location.protocol}//${window.location.host}/api/fotovoltaica`;
+  }
+  
+  // Fallback para desarrollo local
+  return 'http://localhost:8787';
+}
+
+const API_BASE = getApiBase();
 
 // Token management
 let authToken: string | null = null;

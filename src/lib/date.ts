@@ -32,9 +32,17 @@ export function toIsoMidnight(value: string | Date | null | undefined): Date | n
   return d;
 }
 
-export function formatDdMmYyyyFromIso(iso?: string | null): string {
+export function formatDdMmYyyyFromIso(iso?: string | Date | null): string {
   if (!iso) return '';
-  const d = new Date(iso);
+  
+  // Si ya es un objeto Date, usar directamente
+  let d: Date;
+  if (iso instanceof Date) {
+    d = iso;
+  } else {
+    d = new Date(iso);
+  }
+  
   if (isNaN(d.getTime())) return '';
   const dd = String(d.getUTCDate()).padStart(2, '0');
   const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
@@ -42,9 +50,17 @@ export function formatDdMmYyyyFromIso(iso?: string | null): string {
   return `${dd}/${mm}/${yyyy}`;
 }
 
-export function formatYyyyMmDdFromIso(iso?: string | null): string {
+export function formatYyyyMmDdFromIso(iso?: string | Date | null): string {
   if (!iso) return '';
-  const d = new Date(iso);
+  
+  // Si ya es un objeto Date, usar directamente
+  let d: Date;
+  if (iso instanceof Date) {
+    d = iso;
+  } else {
+    d = new Date(iso);
+  }
+  
   if (isNaN(d.getTime())) return '';
   const dd = String(d.getUTCDate()).padStart(2, '0');
   const mm = String(d.getUTCMonth() + 1).padStart(2, '0');

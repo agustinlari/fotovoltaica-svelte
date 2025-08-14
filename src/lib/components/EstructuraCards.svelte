@@ -4,27 +4,32 @@
   import { apiGet, apiPost, apiPut, apiDelete } from '../api';
   import { formatDdMmYyyyFromIso, formatYyyyMmDdFromIso, toIsoMidnight } from '../date';
   import ProtectedRoute from './ProtectedRoute.svelte';
+  import PhotoGallery from './PhotoGallery.svelte';
 
   type State = {
     loading: boolean;
     items: Estructura[];
+    filteredItems: Estructura[];
     error: string | null;
     showCreateModal: boolean;
     showEditModal: boolean;
     showDeleteModal: boolean;
     selectedEstructura: Estructura | null;
     isSubmitting: boolean;
+    searchQuery: string;
   };
 
   let state: State = {
     loading: true,
     items: [],
+    filteredItems: [],
     error: null,
     showCreateModal: false,
     showEditModal: false,
     showDeleteModal: false,
     selectedEstructura: null,
     isSubmitting: false,
+    searchQuery: '',
   };
 
   let newEstructura: Partial<Estructura> = {};
@@ -35,11 +40,49 @@
       state.loading = true;
       state.error = null;
       state.items = await apiGet<Estructura[]>('/estructura');
+      filterItems();
     } catch (e: any) {
       state.error = e?.message || 'Error cargando estructuras';
     } finally {
       state.loading = false;
     }
+  }
+
+  function filterItems() {
+    if (!state.searchQuery.trim()) {
+      state.filteredItems = [...state.items];
+      return;
+    }
+
+    const query = state.searchQuery.toLowerCase().trim();
+    state.filteredItems = state.items.filter(estructura => {
+      const searchableFields = [
+        estructura.DNI,
+        estructura.Conductor,
+        estructura.Matricula,
+        estructura.Proveedor,
+        estructura.PackingList,
+        estructura.Albaran,
+        estructura.id?.toString(),
+        // Buscar también en fecha formateada
+        estructura.FechaDescarga ? formatDdMmYyyyFromIso(estructura.FechaDescarga) : ''
+      ];
+
+      return searchableFields.some(field => 
+        field && field.toString().toLowerCase().includes(query)
+      );
+    });
+  }
+
+  function handleSearch(event: Event) {
+    const target = event.target as HTMLInputElement;
+    state.searchQuery = target.value;
+    filterItems();
+  }
+
+  function clearSearch() {
+    state.searchQuery = '';
+    filterItems();
   }
 
   function openCreateModal() {
@@ -82,6 +125,7 @@
       
       const created = await apiPost<Estructura>('/estructura', newEstructura);
       state.items = [...state.items, created];
+      filterItems();
       state.showCreateModal = false;
     } catch (e: any) {
       state.error = e?.message || 'Error creando estructura';
@@ -108,6 +152,7 @@
         state.items[index] = { ...state.items[index], ...editEstructura };
       }
       
+      filterItems();
       state.showEditModal = false;
       state.selectedEstructura = null;
     } catch (e: any) {
@@ -127,6 +172,7 @@
       // Remover de la lista local
       state.items = state.items.filter(item => item.id !== state.selectedEstructura!.id);
       
+      filterItems();
       state.showDeleteModal = false;
       state.selectedEstructura = null;
     } catch (e: any) {
@@ -159,6 +205,32 @@
     </button>
   </div>
 
+  <!-- Buscador -->
+  <div class="search-container">
+    <div class="search-box">
+      <div class="search-input-wrapper">
+        <input
+          type="text"
+          placeholder="Buscar estructuras por proveedor, conductor, matrícula, DNI..."
+          bind:value={state.searchQuery}
+          on:input={handleSearch}
+          class="search-input"
+        />
+        {#if state.searchQuery}
+          <button class="search-clear" on:click={clearSearch} title="Limpiar búsqueda">
+            ×
+          </button>
+        {/if}
+      </div>
+      <div class="search-icon">🔍</div>
+    </div>
+    {#if state.searchQuery && state.filteredItems.length !== state.items.length}
+      <div class="search-results">
+        Mostrando {state.filteredItems.length} de {state.items.length} estructuras
+      </div>
+    {/if}
+  </div>
+
   {#if state.loading}
     <div class="loading-state">
       <div class="spinner"></div>
@@ -177,9 +249,17 @@
         + Crear Primera Estructura
       </button>
     </div>
+  {:else if state.filteredItems.length === 0 && state.searchQuery}
+    <div class="empty-state">
+      <h3>No se encontraron estructuras</h3>
+      <p>No hay estructuras que coincidan con "{state.searchQuery}"</p>
+      <button class="btn-secondary" on:click={clearSearch}>
+        Limpiar búsqueda
+      </button>
+    </div>
   {:else}
     <div class="estructuras-grid">
-      {#each state.items as estructura (estructura.id)}
+      {#each state.filteredItems as estructura (estructura.id)}
         <div class="estructura-card">
           <div class="card-header">
             <div class="estructura-id">#{estructura.id}</div>
@@ -221,6 +301,9 @@
                 <span>{estructura.FechaDescarga ? formatDdMmYyyyFromIso(estructura.FechaDescarga) : '-'}</span>
               </div>
             </div>
+
+            <!-- Galería de fotos -->
+            <PhotoGallery tableName="estructura" recordId={estructura.id} />
           </div>
         </div>
       {/each}
@@ -394,6 +477,86 @@
     max-width: 1400px;
     margin: 0 auto;
     padding: 24px;
+  }
+
+  /* Search Styles */
+  .search-container {
+    margin-bottom: 24px;
+  }
+
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .search-input-wrapper {
+    position: relative;
+    flex: 1;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 12px 16px;
+    padding-right: 40px;
+    border: 2px solid #E5E7EB;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: #10B981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  }
+
+  .search-clear {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #6B7280;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+
+  .search-clear:hover {
+    background: #F3F4F6;
+    color: #374151;
+  }
+
+  .search-icon {
+    font-size: 20px;
+    color: #6B7280;
+    padding: 12px;
+    background: #F9FAFB;
+    border: 2px solid #E5E7EB;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .search-results {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 14px;
+    color: #6B7280;
+    padding: 8px 16px;
+    background: #F0FDF4;
+    border: 1px solid #DCFCE7;
+    border-radius: 6px;
+    max-width: 600px;
+    margin: 12px auto 0;
   }
   
   .estructuras-header {
