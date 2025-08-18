@@ -33,30 +33,33 @@
   <Login on:loginSuccess={() => {}} />
 {:else}
   <main>
-    <header class="app-header">
-      <div class="header-left">
-        {#if currentView !== 'dashboard'}
-          <button class="back-btn" on:click={goToDashboard}>
-            ← Dashboard
-          </button>
-        {/if}
-        <h1>
-          {#if currentView === 'dashboard'}
-            Fotovoltaica
-          {:else if currentView === 'camiones'}
-            Camiones
-          {:else if currentView === 'estructura'}
-            Estructura
-          {:else if currentView === 'pallets'}
-            Pallets
-          {/if}
-        </h1>
-      </div>
+    <header class="app-header" class:centered-header={currentView !== 'dashboard'}>
       {#if currentView === 'dashboard'}
+        <div class="header-left">
+          <h1>Fotovoltaica</h1>
+        </div>
         <div class="user-info">
           <span class="welcome-text">Bienvenido, {$currentUser?.name || $currentUser?.email}</span>
           <button class="logout-btn" on:click={handleLogout}>Cerrar Sesión</button>
         </div>
+      {:else}
+        <div class="back-section">
+          <button class="back-btn" on:click={goToDashboard}>
+            ← Dashboard
+          </button>
+        </div>
+        <div class="center-section">
+          <h1>
+            {#if currentView === 'camiones'}
+              Camiones
+            {:else if currentView === 'estructura'}
+              Estructura
+            {:else if currentView === 'pallets'}
+              Pallets
+            {/if}
+          </h1>
+        </div>
+        <div class="spacer-section"></div>
       {/if}
     </header>
     
@@ -117,6 +120,26 @@
     display: flex;
     align-items: center;
     gap: 16px;
+  }
+  
+  .centered-header {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    align-items: center;
+  }
+  
+  .back-section {
+    display: flex;
+    justify-content: flex-start;
+  }
+  
+  .center-section {
+    display: flex;
+    justify-content: center;
+  }
+  
+  .spacer-section {
+    /* Empty spacer for grid balance */
   }
   
   .back-btn {
