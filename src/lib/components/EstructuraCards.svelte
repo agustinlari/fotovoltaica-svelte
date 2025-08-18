@@ -36,6 +36,8 @@
     isSubmitting: boolean;
     searchQuery: string;
     showBarcodeScanner: boolean;
+    viewMode: 'cards' | 'table';
+    isLargeScreen: boolean;
   };
 
   let state: State = {
@@ -50,6 +52,8 @@
     isSubmitting: false,
     searchQuery: '',
     showBarcodeScanner: false,
+    viewMode: 'cards',
+    isLargeScreen: false,
   };
 
   let newEstructura: Partial<Estructura> = {};
@@ -226,16 +230,52 @@
     state.error = null;
   }
 
-  onMount(load);
+  function checkScreenSize() {
+    state.isLargeScreen = window.innerWidth >= 1200;
+    state.viewMode = state.isLargeScreen ? 'table' : 'cards';
+  }
+
+  function toggleViewMode() {
+    state.viewMode = state.viewMode === 'cards' ? 'table' : 'cards';
+  }
+
+  onMount(() => {
+    load();
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    
+    return () => {
+      window.removeEventListener('resize', checkScreenSize);
+    };
+  });
 </script>
 
 <ProtectedRoute>
 <div class="estructuras-container">
   <div class="estructuras-header">
-
     <button class="btn-primary" on:click={openCreateModal}>
       + Nueva Estructura
     </button>
+    
+    <!-- Toggle de vista solo visible en pantallas grandes -->
+    {#if state.isLargeScreen}
+      <div class="view-toggle">
+        <button 
+          class="toggle-btn" 
+          class:active={state.viewMode === 'cards'}
+          on:click={() => state.viewMode = 'cards'}
+        >
+          📋 Tarjetas
+        </button>
+        <button 
+          class="toggle-btn" 
+          class:active={state.viewMode === 'table'}
+          on:click={() => state.viewMode = 'table'}
+        >
+          📊 Tabla
+        </button>
+      </div>
+    {/if}
   </div>
 
   <!-- Buscador -->
@@ -293,76 +333,136 @@
       </button>
     </div>
   {:else}
-    <div class="estructuras-grid">
-      {#each state.filteredItems as estructura (estructura.id)}
-        <div class="estructura-card" on:click={() => openEditModal(estructura)} role="button" tabindex="0" on:keydown={(e) => { if (e.key === 'Enter') openEditModal(estructura); }}>
-          <div class="card-header">
-            <div class="estructura-id">#{estructura.id}</div>
-            <div class="card-actions">
-              <button class="btn-delete" on:click|stopPropagation={() => openDeleteModal(estructura)} title="Eliminar">
-                🗑️
-              </button>
-            </div>
-          </div>
-          
-          <div class="card-content">
-            <div class="main-info">
-              <h3>{estructura.Proveedor || 'Sin proveedor'}</h3>
-              <p class="conductor">{estructura.Conductor || 'Sin conductor'}</p>
+    <!-- Vista de tabla para pantallas grandes -->
+    {#if state.viewMode === 'table'}
+      <div class="estructuras-table-container">
+        <table class="estructuras-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Proveedor</th>
+              <th>Conductor</th>
+              <th>DNI</th>
+              <th>Matrícula</th>
+              <th>Packing List</th>
+              <th>Albarán</th>
+              <th>Fecha Descarga</th>
+              <th>Actualizado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each state.filteredItems as estructura (estructura.id)}
+              <tr class="table-row" on:click={() => openEditModal(estructura)} role="button" tabindex="0" on:keydown={(e) => { if (e.key === 'Enter') openEditModal(estructura); }}>
+                <td class="id-cell">#{estructura.id}</td>
+                <td class="proveedor-cell">{estructura.Proveedor || '-'}</td>
+                <td class="conductor-cell">{estructura.Conductor || '-'}</td>
+                <td class="dni-cell">{estructura.DNI || '-'}</td>
+                <td class="matricula-cell">{estructura.Matricula || '-'}</td>
+                <td class="packing-cell">{estructura.PackingList || '-'}</td>
+                <td class="albaran-cell">{estructura.Albaran || '-'}</td>
+                <td class="fecha-cell">{estructura.FechaDescarga ? formatDdMmYyyyFromIso(estructura.FechaDescarga) : '-'}</td>
+                <td class="updated-cell">
+                  {#if estructura.modified_at}
+                    <div class="update-info">
+                      <span class="update-date">{formatUpdateDate(estructura.modified_at)}</span>
+                      {#if estructura.modified_by}
+                        {#await getUserDisplayName(estructura.modified_by)}
+                          <span class="update-user">...</span>
+                        {:then email}
+                          <span class="update-user">{email}</span>
+                        {:catch}
+                          <span class="update-user">{estructura.modified_by}</span>
+                        {/await}
+                      {/if}
+                    </div>
+                  {:else}
+                    -
+                  {/if}
+                </td>
+                <td class="actions-cell">
+                  <button class="btn-delete-table" on:click|stopPropagation={() => openDeleteModal(estructura)} title="Eliminar">
+                    🗑️
+                  </button>
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    {:else}
+      <!-- Vista de tarjetas -->
+      <div class="estructuras-grid">
+        {#each state.filteredItems as estructura (estructura.id)}
+          <div class="estructura-card" on:click={() => openEditModal(estructura)} role="button" tabindex="0" on:keydown={(e) => { if (e.key === 'Enter') openEditModal(estructura); }}>
+            <div class="card-header">
+              <div class="estructura-id">#{estructura.id}</div>
+              <div class="card-actions">
+                <button class="btn-delete" on:click|stopPropagation={() => openDeleteModal(estructura)} title="Eliminar">
+                  🗑️
+                </button>
+              </div>
             </div>
             
-            <div class="details-grid">
-              <div class="detail-item">
-                <label>DNI</label>
-                <span>{estructura.DNI || '-'}</span>
+            <div class="card-content">
+              <div class="main-info">
+                <h3>{estructura.Proveedor || 'Sin proveedor'}</h3>
+                <p class="conductor">{estructura.Conductor || 'Sin conductor'}</p>
               </div>
-              <div class="detail-item">
-                <label>Matrícula</label>
-                <span>{estructura.Matricula || '-'}</span>
-              </div>
-              <div class="detail-item">
-                <label>Packing List</label>
-                <span>{estructura.PackingList || '-'}</span>
-              </div>
-              <div class="detail-item">
-                <label>Albarán</label>
-                <span>{estructura.Albaran || '-'}</span>
-              </div>
-              <div class="detail-item full-width">
-                <label>Fecha Descarga</label>
-                <span>{estructura.FechaDescarga ? formatDdMmYyyyFromIso(estructura.FechaDescarga) : '-'}</span>
-              </div>
-            </div>
-
-            <!-- Información de auditoría -->
-            {#if estructura.modified_at || estructura.modified_by}
-              <div class="audit-info">
-                <div class="audit-item">
-                  <label>Última actualización</label>
-                  <span class="audit-details">
-                    {#if estructura.modified_at}
-                      {formatUpdateDate(estructura.modified_at)}
-                    {/if}
-                    {#if estructura.modified_by}
-                      {#await getUserDisplayName(estructura.modified_by)}
-                        <span class="user-loading">...</span>
-                      {:then email}
-                        <span class="user-name">por {email}</span>
-                      {:catch}
-                        <span class="user-name">por {estructura.modified_by}</span>
-                      {/await}
-                    {/if}
-                  </span>
+              
+              <div class="details-grid">
+                <div class="detail-item">
+                  <label>DNI</label>
+                  <span>{estructura.DNI || '-'}</span>
+                </div>
+                <div class="detail-item">
+                  <label>Matrícula</label>
+                  <span>{estructura.Matricula || '-'}</span>
+                </div>
+                <div class="detail-item">
+                  <label>Packing List</label>
+                  <span>{estructura.PackingList || '-'}</span>
+                </div>
+                <div class="detail-item">
+                  <label>Albarán</label>
+                  <span>{estructura.Albaran || '-'}</span>
+                </div>
+                <div class="detail-item full-width">
+                  <label>Fecha Descarga</label>
+                  <span>{estructura.FechaDescarga ? formatDdMmYyyyFromIso(estructura.FechaDescarga) : '-'}</span>
                 </div>
               </div>
-            {/if}
 
-            <!-- Vista previa de fotos (solo lectura) -->
-            <PhotoGallery tableName="estructura" recordId={estructura.id} readonly={true} />
+              <!-- Información de auditoría -->
+              {#if estructura.modified_at || estructura.modified_by}
+                <div class="audit-info">
+                  <div class="audit-item">
+                    <label>Última actualización</label>
+                    <span class="audit-details">
+                      {#if estructura.modified_at}
+                        {formatUpdateDate(estructura.modified_at)}
+                      {/if}
+                      {#if estructura.modified_by}
+                        {#await getUserDisplayName(estructura.modified_by)}
+                          <span class="user-loading">...</span>
+                        {:then email}
+                          <span class="user-name">por {email}</span>
+                        {:catch}
+                          <span class="user-name">por {estructura.modified_by}</span>
+                        {/await}
+                      {/if}
+                    </span>
+                  </div>
+                </div>
+              {/if}
+
+              <!-- Vista previa de fotos (solo lectura) -->
+              <PhotoGallery tableName="estructura" recordId={estructura.id} readonly={true} />
+            </div>
           </div>
-        </div>
-      {/each}
-    </div>
+        {/each}
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -670,6 +770,37 @@
     margin-bottom: 32px;
     padding-bottom: 20px;
     border-bottom: 2px solid #E5E7EB;
+    gap: 24px;
+  }
+  
+  .view-toggle {
+    display: flex;
+    background: #F3F4F6;
+    border-radius: 8px;
+    padding: 4px;
+    gap: 2px;
+  }
+  
+  .toggle-btn {
+    background: transparent;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #6B7280;
+  }
+  
+  .toggle-btn.active {
+    background: white;
+    color: #10B981;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .toggle-btn:hover:not(.active) {
+    color: #374151;
   }
   
   
@@ -1122,11 +1253,143 @@
     margin-top: 20px;
   }
   
+  /* Estilos de tabla */
+  .estructuras-table-container {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #E5E7EB;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .estructuras-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  
+  .estructuras-table thead {
+    background: #F0FDF4;
+  }
+  
+  .estructuras-table th {
+    padding: 16px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #059669;
+    border-bottom: 2px solid #DCFCE7;
+    white-space: nowrap;
+  }
+  
+  .estructuras-table td {
+    padding: 12px;
+    border-bottom: 1px solid #F3F4F6;
+    vertical-align: middle;
+  }
+  
+  .table-row {
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .table-row:hover {
+    background: #F9FAFB;
+  }
+  
+  .table-row:focus {
+    outline: 2px solid #10B981;
+    outline-offset: -2px;
+  }
+  
+  .id-cell {
+    font-weight: 600;
+    color: #059669;
+    min-width: 80px;
+  }
+  
+  .proveedor-cell {
+    font-weight: 600;
+    color: #1F2937;
+    min-width: 150px;
+  }
+  
+  .conductor-cell {
+    color: #6B7280;
+    min-width: 120px;
+  }
+  
+  .dni-cell {
+    font-family: monospace;
+    min-width: 100px;
+  }
+  
+  .matricula-cell {
+    font-family: monospace;
+    min-width: 100px;
+  }
+  
+  .packing-cell {
+    min-width: 120px;
+  }
+  
+  .albaran-cell {
+    min-width: 100px;
+  }
+  
+  .fecha-cell {
+    min-width: 110px;
+    font-family: monospace;
+  }
+  
+  .updated-cell {
+    min-width: 140px;
+  }
+  
+  .update-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .update-date {
+    font-size: 12px;
+    color: #374151;
+  }
+  
+  .update-user {
+    font-size: 11px;
+    color: #6B7280;
+    font-style: italic;
+  }
+  
+  .actions-cell {
+    text-align: center;
+    min-width: 80px;
+  }
+  
+  .btn-delete-table {
+    background: none;
+    border: none;
+    padding: 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 16px;
+  }
+  
+  .btn-delete-table:hover {
+    background: #FEE2E2;
+  }
+
   @media (max-width: 768px) {
     .estructuras-header {
       flex-direction: column;
       gap: 16px;
       align-items: center;
+    }
+    
+    .view-toggle {
+      display: none;
     }
     
     .estructuras-grid {

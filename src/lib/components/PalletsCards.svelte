@@ -37,6 +37,8 @@
     loadingCamiones: boolean;
     searchQuery: string;
     showBarcodeScanner: boolean;
+    viewMode: 'cards' | 'table';
+    isLargeScreen: boolean;
   };
 
   let state: State = {
@@ -53,6 +55,8 @@
     loadingCamiones: false,
     searchQuery: '',
     showBarcodeScanner: false,
+    viewMode: 'cards',
+    isLargeScreen: false,
   };
 
   let newPallet: Partial<Pallet> = {};
@@ -248,19 +252,53 @@
     state.error = null;
   }
 
+  function checkScreenSize() {
+    state.isLargeScreen = window.innerWidth >= 1200;
+    state.viewMode = state.isLargeScreen ? 'table' : 'cards';
+  }
+
+  function toggleViewMode() {
+    state.viewMode = state.viewMode === 'cards' ? 'table' : 'cards';
+  }
+
   onMount(() => {
     load();
     loadCamiones();
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    
+    return () => {
+      window.removeEventListener('resize', checkScreenSize);
+    };
   });
 </script>
 
 <ProtectedRoute>
 <div class="pallets-container">
   <div class="pallets-header">
-
     <button class="btn-primary" on:click={openCreateModal}>
       + Nuevo Pallet
     </button>
+    
+    <!-- Toggle de vista solo visible en pantallas grandes -->
+    {#if state.isLargeScreen}
+      <div class="view-toggle">
+        <button 
+          class="toggle-btn" 
+          class:active={state.viewMode === 'cards'}
+          on:click={() => state.viewMode = 'cards'}
+        >
+          📋 Tarjetas
+        </button>
+        <button 
+          class="toggle-btn" 
+          class:active={state.viewMode === 'table'}
+          on:click={() => state.viewMode = 'table'}
+        >
+          📊 Tabla
+        </button>
+      </div>
+    {/if}
   </div>
 
   <!-- Buscador -->
@@ -318,76 +356,136 @@
       </button>
     </div>
   {:else}
-    <div class="pallets-grid">
-      {#each state.filteredItems as pallet (pallet.id)}
-        <div class="pallet-card" class:defecto={pallet.Defecto} on:click={() => openEditModal(pallet)} role="button" tabindex="0" on:keydown={(e) => { if (e.key === 'Enter') openEditModal(pallet); }}>
-          <div class="card-header">
-            <div class="pallet-id">{pallet.id}</div>
-            <div class="card-actions">
-              <button class="btn-delete" on:click|stopPropagation={() => openDeleteModal(pallet)} title="Eliminar">
-                🗑️
-              </button>
-            </div>
-          </div>
-          
-          <div class="card-content">
-            <div class="main-info">
-              <h3>Pallet {pallet.id}</h3>
-              <div class="status-badges">
-                {#if pallet.Defecto}
-                  <span class="badge badge-danger">Con Defecto</span>
-                {:else}
-                  <span class="badge badge-success">Sin Defecto</span>
-                {/if}
+    <!-- Vista de tabla para pantallas grandes -->
+    {#if state.viewMode === 'table'}
+      <div class="pallets-table-container">
+        <table class="pallets-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Estado</th>
+              <th>Descarga</th>
+              <th>Camión Asignado</th>
+              <th>Actualizado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each state.filteredItems as pallet (pallet.id)}
+              <tr class="table-row" class:defecto-row={pallet.Defecto} on:click={() => openEditModal(pallet)} role="button" tabindex="0" on:keydown={(e) => { if (e.key === 'Enter') openEditModal(pallet); }}>
+                <td class="id-cell">{pallet.id}</td>
+                <td class="estado-cell">
+                  {#if pallet.Defecto}
+                    <span class="status-badge status-danger">Con Defecto</span>
+                  {:else}
+                    <span class="status-badge status-success">Sin Defecto</span>
+                  {/if}
+                </td>
+                <td class="descarga-cell">{pallet.Descarga || '-'}</td>
+                <td class="camion-cell">
+                  <span class="camion-info-table">{getCamionInfo(pallet.Descarga)}</span>
+                </td>
+                <td class="updated-cell">
+                  {#if pallet.updated_at}
+                    <div class="update-info">
+                      <span class="update-date">{formatUpdateDate(pallet.updated_at)}</span>
+                      {#if pallet.updated_by}
+                        {#await getUserDisplayName(pallet.updated_by)}
+                          <span class="update-user">...</span>
+                        {:then email}
+                          <span class="update-user">{email}</span>
+                        {:catch}
+                          <span class="update-user">{pallet.updated_by}</span>
+                        {/await}
+                      {/if}
+                    </div>
+                  {:else}
+                    -
+                  {/if}
+                </td>
+                <td class="actions-cell">
+                  <button class="btn-delete-table" on:click|stopPropagation={() => openDeleteModal(pallet)} title="Eliminar">
+                    🗑️
+                  </button>
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    {:else}
+      <!-- Vista de tarjetas -->
+      <div class="pallets-grid">
+        {#each state.filteredItems as pallet (pallet.id)}
+          <div class="pallet-card" class:defecto={pallet.Defecto} on:click={() => openEditModal(pallet)} role="button" tabindex="0" on:keydown={(e) => { if (e.key === 'Enter') openEditModal(pallet); }}>
+            <div class="card-header">
+              <div class="pallet-id">{pallet.id}</div>
+              <div class="card-actions">
+                <button class="btn-delete" on:click|stopPropagation={() => openDeleteModal(pallet)} title="Eliminar">
+                  🗑️
+                </button>
               </div>
             </div>
             
-            <div class="details-grid">
-              <div class="detail-item">
-                <label>Descarga</label>
-                <span>{pallet.Descarga || '-'}</span>
+            <div class="card-content">
+              <div class="main-info">
+                <h3>Pallet {pallet.id}</h3>
+                <div class="status-badges">
+                  {#if pallet.Defecto}
+                    <span class="badge badge-danger">Con Defecto</span>
+                  {:else}
+                    <span class="badge badge-success">Sin Defecto</span>
+                  {/if}
+                </div>
               </div>
-              <div class="detail-item">
-                <label>Estado</label>
-                <span>{pallet.Defecto ? 'Con Defecto' : 'Sin Defecto'}</span>
-              </div>
-              <div class="detail-item full-width">
-                <label>Camión Asignado</label>
-                <span class="camion-info">
-                  {getCamionInfo(pallet.Descarga)}
-                </span>
-              </div>
-            </div>
-
-            <!-- Información de auditoría -->
-            {#if pallet.updated_at || pallet.updated_by}
-              <div class="audit-info">
-                <div class="audit-item">
-                  <label>Última actualización</label>
-                  <span class="audit-details">
-                    {#if pallet.updated_at}
-                      {formatUpdateDate(pallet.updated_at)}
-                    {/if}
-                    {#if pallet.updated_by}
-                      {#await getUserDisplayName(pallet.updated_by)}
-                        <span class="user-loading">...</span>
-                      {:then email}
-                        <span class="user-name">por {email}</span>
-                      {:catch}
-                        <span class="user-name">por {pallet.updated_by}</span>
-                      {/await}
-                    {/if}
+              
+              <div class="details-grid">
+                <div class="detail-item">
+                  <label>Descarga</label>
+                  <span>{pallet.Descarga || '-'}</span>
+                </div>
+                <div class="detail-item">
+                  <label>Estado</label>
+                  <span>{pallet.Defecto ? 'Con Defecto' : 'Sin Defecto'}</span>
+                </div>
+                <div class="detail-item full-width">
+                  <label>Camión Asignado</label>
+                  <span class="camion-info">
+                    {getCamionInfo(pallet.Descarga)}
                   </span>
                 </div>
               </div>
-            {/if}
 
-            <!-- Vista previa de fotos (solo lectura) -->
-            <PhotoGallery tableName="pallets" recordId={pallet.id} readonly={true} />
+              <!-- Información de auditoría -->
+              {#if pallet.updated_at || pallet.updated_by}
+                <div class="audit-info">
+                  <div class="audit-item">
+                    <label>Última actualización</label>
+                    <span class="audit-details">
+                      {#if pallet.updated_at}
+                        {formatUpdateDate(pallet.updated_at)}
+                      {/if}
+                      {#if pallet.updated_by}
+                        {#await getUserDisplayName(pallet.updated_by)}
+                          <span class="user-loading">...</span>
+                        {:then email}
+                          <span class="user-name">por {email}</span>
+                        {:catch}
+                          <span class="user-name">por {pallet.updated_by}</span>
+                        {/await}
+                      {/if}
+                    </span>
+                  </div>
+                </div>
+              {/if}
+
+              <!-- Vista previa de fotos (solo lectura) -->
+              <PhotoGallery tableName="pallets" recordId={pallet.id} readonly={true} />
+            </div>
           </div>
-        </div>
-      {/each}
-    </div>
+        {/each}
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -693,6 +791,37 @@
     margin-bottom: 32px;
     padding-bottom: 20px;
     border-bottom: 2px solid #E5E7EB;
+    gap: 24px;
+  }
+  
+  .view-toggle {
+    display: flex;
+    background: #F3F4F6;
+    border-radius: 8px;
+    padding: 4px;
+    gap: 2px;
+  }
+  
+  .toggle-btn {
+    background: transparent;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #6B7280;
+  }
+  
+  .toggle-btn.active {
+    background: white;
+    color: #F59E0B;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .toggle-btn:hover:not(.active) {
+    color: #374151;
   }
   
   .btn-primary {
@@ -1216,11 +1345,164 @@
     margin-top: 20px;
   }
   
+  /* Estilos de tabla */
+  .pallets-table-container {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #E5E7EB;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .pallets-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  
+  .pallets-table thead {
+    background: #FFFBEB;
+  }
+  
+  .pallets-table th {
+    padding: 16px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #D97706;
+    border-bottom: 2px solid #FED7AA;
+    white-space: nowrap;
+  }
+  
+  .pallets-table td {
+    padding: 12px;
+    border-bottom: 1px solid #F3F4F6;
+    vertical-align: middle;
+  }
+  
+  .table-row {
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .table-row:hover {
+    background: #F9FAFB;
+  }
+  
+  .table-row.defecto-row {
+    background: #FEF2F2;
+  }
+  
+  .table-row.defecto-row:hover {
+    background: #FEE2E2;
+  }
+  
+  .table-row:focus {
+    outline: 2px solid #F59E0B;
+    outline-offset: -2px;
+  }
+  
+  .id-cell {
+    font-weight: 600;
+    color: #D97706;
+    font-family: 'Courier New', monospace;
+    min-width: 120px;
+  }
+  
+  .defecto-row .id-cell {
+    color: #DC2626;
+  }
+  
+  .estado-cell {
+    min-width: 120px;
+  }
+  
+  .status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .status-success {
+    background: #D1FAE5;
+    color: #065F46;
+  }
+  
+  .status-danger {
+    background: #FEE2E2;
+    color: #991B1B;
+  }
+  
+  .descarga-cell {
+    font-family: monospace;
+    min-width: 100px;
+  }
+  
+  .camion-cell {
+    min-width: 200px;
+  }
+  
+  .camion-info-table {
+    font-family: 'Courier New', monospace;
+    background: #F3F4F6;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #D1D5DB;
+    font-size: 12px;
+  }
+  
+  .updated-cell {
+    min-width: 140px;
+  }
+  
+  .update-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .update-date {
+    font-size: 12px;
+    color: #374151;
+  }
+  
+  .update-user {
+    font-size: 11px;
+    color: #6B7280;
+    font-style: italic;
+  }
+  
+  .actions-cell {
+    text-align: center;
+    min-width: 80px;
+  }
+  
+  .btn-delete-table {
+    background: none;
+    border: none;
+    padding: 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 16px;
+  }
+  
+  .btn-delete-table:hover {
+    background: #FEE2E2;
+  }
+
   @media (max-width: 768px) {
     .pallets-header {
       flex-direction: column;
       gap: 16px;
       align-items: center;
+    }
+    
+    .view-toggle {
+      display: none;
     }
     
     .pallets-grid {

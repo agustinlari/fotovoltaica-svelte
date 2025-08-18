@@ -36,6 +36,8 @@
     isSubmitting: boolean;
     searchQuery: string;
     showBarcodeScanner: boolean;
+    viewMode: 'cards' | 'table';
+    isLargeScreen: boolean;
   };
 
   let state: State = {
@@ -50,6 +52,8 @@
     isSubmitting: false,
     searchQuery: '',
     showBarcodeScanner: false,
+    viewMode: 'cards',
+    isLargeScreen: false,
   };
 
   let newCamion: Partial<Camion> = {};
@@ -226,7 +230,20 @@
     state.error = null;
   }
 
-  onMount(load);
+  onMount(() => {
+    load();
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+  });
+  
+  function checkScreenSize() {
+    state.isLargeScreen = window.innerWidth >= 1200;
+    state.viewMode = state.isLargeScreen ? 'table' : 'cards';
+  }
+  
+  function toggleView() {
+    state.viewMode = state.viewMode === 'cards' ? 'table' : 'cards';
+  }
 </script>
 
 <ProtectedRoute>
@@ -293,17 +310,80 @@
       </button>
     </div>
   {:else}
-    <div class="camiones-grid">
-      {#each state.filteredItems as camion (camion.id)}
-        <div class="camion-card" on:click={() => openEditModal(camion)} role="button" tabindex="0" on:keydown={(e) => { if (e.key === 'Enter') openEditModal(camion); }}>
-          <div class="card-header">
-            <div class="camion-id">#{camion.id}</div>
-            <div class="card-actions">
-              <button class="btn-delete" on:click|stopPropagation={() => openDeleteModal(camion)} title="Eliminar">
-                🗑️
-              </button>
+    <!-- Toggle para vista -->
+    {#if state.isLargeScreen}
+      <div class="view-toggle">
+        <button class="toggle-btn" class:active={state.viewMode === 'cards'} on:click={() => state.viewMode = 'cards'}>
+          📱 Tarjetas
+        </button>
+        <button class="toggle-btn" class:active={state.viewMode === 'table'} on:click={() => state.viewMode = 'table'}>
+          📊 Tabla
+        </button>
+      </div>
+    {/if}
+    
+    {#if state.viewMode === 'table' && state.isLargeScreen}
+      <!-- Vista de tabla -->
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>DNI</th>
+              <th>Ubicación</th>
+              <th>Container</th>
+              <th>Albarán</th>
+              <th>Fecha Descarga</th>
+              <th>Actualizado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each state.filteredItems as camion (camion.id)}
+              <tr class="table-row" on:click={() => openEditModal(camion)}>
+                <td class="id-cell">#{camion.id}</td>
+                <td>{camion.DNI || '-'}</td>
+                <td>{camion.UbicacionCampa || '-'}</td>
+                <td>{camion.Container || '-'}</td>
+                <td>{camion.Albaran || '-'}</td>
+                <td>{camion.FechaDescarga ? formatDdMmYyyyFromIso(camion.FechaDescarga) : '-'}</td>
+                <td class="update-cell">
+                  {#if camion.updated_at}
+                    <div class="update-info">
+                      <span class="update-date">{formatUpdateDate(camion.updated_at)}</span>
+                      {#if camion.updated_by}
+                        {#await getUserEmailCached(camion.updated_by) then email}
+                          <span class="update-user">{email}</span>
+                        {/await}
+                      {/if}
+                    </div>
+                  {:else}
+                    -
+                  {/if}
+                </td>
+                <td class="actions-cell">
+                  <button class="btn-delete-table" on:click|stopPropagation={() => openDeleteModal(camion)} title="Eliminar">
+                    🗑️
+                  </button>
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    {:else}
+      <!-- Vista de tarjetas -->
+      <div class="camiones-grid">
+        {#each state.filteredItems as camion (camion.id)}
+          <div class="camion-card" on:click={() => openEditModal(camion)} role="button" tabindex="0" on:keydown={(e) => { if (e.key === 'Enter') openEditModal(camion); }}>
+            <div class="card-header">
+              <div class="camion-id">#{camion.id}</div>
+              <div class="card-actions">
+                <button class="btn-delete" on:click|stopPropagation={() => openDeleteModal(camion)} title="Eliminar">
+                  🗑️
+                </button>
+              </div>
             </div>
-          </div>
           
           <div class="card-content">
             <div class="main-info">
@@ -361,8 +441,9 @@
             <PhotoGallery tableName="camiones" recordId={camion.id} readonly={true} />
           </div>
         </div>
-      {/each}
-    </div>
+        {/each}
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -751,6 +832,117 @@
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+  }
+  
+  /* Vista toggle */
+  .view-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    justify-content: center;
+  }
+  
+  .toggle-btn {
+    padding: 10px 20px;
+    border: 2px solid #E5E7EB;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+  }
+  
+  .toggle-btn:hover {
+    border-color: #3B82F6;
+  }
+  
+  .toggle-btn.active {
+    background: #3B82F6;
+    color: white;
+    border-color: #3B82F6;
+  }
+  
+  /* Vista de tabla */
+  .table-container {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #E5E7EB;
+  }
+  
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .data-table th {
+    background: #F9FAFB;
+    padding: 16px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #E5E7EB;
+    font-size: 14px;
+  }
+  
+  .data-table td {
+    padding: 16px 12px;
+    border-bottom: 1px solid #F3F4F6;
+    font-size: 14px;
+  }
+  
+  .table-row {
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .table-row:hover {
+    background: #F9FAFB;
+  }
+  
+  .id-cell {
+    font-weight: 600;
+    color: #3B82F6;
+  }
+  
+  .update-cell {
+    min-width: 180px;
+  }
+  
+  .update-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .update-date {
+    font-weight: 500;
+    color: #374151;
+  }
+  
+  .update-user {
+    font-size: 12px;
+    color: #6B7280;
+  }
+  
+  .actions-cell {
+    width: 80px;
+    text-align: center;
+  }
+  
+  .btn-delete-table {
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 16px;
+  }
+  
+  .btn-delete-table:hover {
+    background: #FEE2E2;
   }
   
   .camiones-grid {

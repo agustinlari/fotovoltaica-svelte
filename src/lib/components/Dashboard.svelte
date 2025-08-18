@@ -1,7 +1,42 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
+  import { apiGet } from '../api';
+  import type { Camion } from '../types/Camion';
+  import type { Estructura } from '../types/Estructura';
+  import type { Pallet } from '../types/Pallet';
   
   const dispatch = createEventDispatcher();
+  
+  let stats = {
+    camiones: 0,
+    estructuras: 0,
+    pallets: 0
+  };
+  
+  onMount(async () => {
+    await loadStats();
+  });
+  
+  async function loadStats() {
+    try {
+      // Cargar contadores desde las APIs usando apiGet
+      const [camionesData, estructurasData, palletsData] = await Promise.all([
+        apiGet<Camion[]>('/camiones').catch(() => []),
+        apiGet<Estructura[]>('/estructura').catch(() => []),
+        apiGet<Pallet[]>('/pallets').catch(() => [])
+      ]);
+      
+      stats.camiones = camionesData.length || 0;
+      stats.estructuras = estructurasData.length || 0;
+      stats.pallets = palletsData.length || 0;
+    } catch (error) {
+      console.error('Error cargando estadísticas:', error);
+      // Mantener valores por defecto en caso de error
+      stats.camiones = 0;
+      stats.estructuras = 0;
+      stats.pallets = 0;
+    }
+  }
   
   const modules = [
     {
@@ -14,7 +49,7 @@
     {
       id: 'estructura',
       title: 'Estructura',
-      description: 'Control de estructuras fotovoltaicas',
+      description: 'Descargas de estructuras fotovoltaicas',
       icon: '⚡',
       color: '#10B981'
     },
@@ -54,15 +89,15 @@
   <div class="dashboard-footer">
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-number">--</div>
+        <div class="stat-number">{stats.camiones}</div>
         <div class="stat-label">Camiones Registrados</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number">--</div>
-        <div class="stat-label">Estructuras Activas</div>
+        <div class="stat-number">{stats.estructuras}</div>
+        <div class="stat-label">Descargas estructura</div>
       </div>
       <div class="stat-card">
-        <div class="stat-number">--</div>
+        <div class="stat-number">{stats.pallets}</div>
         <div class="stat-label">Pallets en Sistema</div>
       </div>
     </div>
