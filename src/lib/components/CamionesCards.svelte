@@ -554,9 +554,15 @@
 
 <style>
   .camiones-container {
-    max-width: 1400px;
+    max-width: 1600px;
     margin: 0 auto;
-    padding: 24px;
+    padding: 32px;
+  }
+  
+  @media (min-width: 1400px) {
+    .camiones-container {
+      padding: 40px;
+    }
   }
   
   @media (max-width: 768px) {
@@ -755,8 +761,15 @@
   
   @media (min-width: 1200px) {
     .camiones-grid {
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(750px, 1fr));
+      gap: 28px;
+    }
+  }
+  
+  @media (min-width: 1600px) {
+    .camiones-grid {
+      grid-template-columns: repeat(auto-fill, minmax(900px, 1fr));
+      gap: 32px;
     }
   }
   
@@ -851,7 +864,15 @@
   
   @media (min-width: 1200px) {
     .details-grid {
-      gap: 12px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+  }
+  
+  @media (min-width: 1600px) {
+    .details-grid {
+      grid-template-columns: repeat(5, 1fr);
+      gap: 24px;
     }
   }
   
@@ -859,6 +880,7 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+    text-align: center;
   }
   
   @media (min-width: 1200px) {
@@ -869,6 +891,18 @@
   
   .detail-item.full-width {
     grid-column: span 2;
+  }
+  
+  @media (min-width: 1200px) {
+    .detail-item.full-width {
+      grid-column: span 2;
+    }
+  }
+  
+  @media (min-width: 1600px) {
+    .detail-item.full-width {
+      grid-column: span 3;
+    }
   }
   
   .detail-item label {

@@ -343,13 +343,20 @@
             </div>
             
             <div class="details-grid">
+              <div class="detail-item">
+                <label>Descarga</label>
+                <span>{pallet.Descarga || '-'}</span>
+              </div>
+              <div class="detail-item">
+                <label>Estado</label>
+                <span>{pallet.Defecto ? 'Con Defecto' : 'Sin Defecto'}</span>
+              </div>
               <div class="detail-item full-width">
                 <label>Camión Asignado</label>
                 <span class="camion-info">
                   {getCamionInfo(pallet.Descarga)}
                 </span>
               </div>
-              
             </div>
 
             <!-- Información de auditoría -->
@@ -566,9 +573,15 @@
 
 <style>
   .pallets-container {
-    max-width: 1400px;
+    max-width: 1600px;
     margin: 0 auto;
-    padding: 24px;
+    padding: 32px;
+  }
+  
+  @media (min-width: 1400px) {
+    .pallets-container {
+      padding: 40px;
+    }
   }
   
   @media (max-width: 768px) {
@@ -766,8 +779,15 @@
   
   @media (min-width: 1200px) {
     .pallets-grid {
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(700px, 1fr));
+      gap: 28px;
+    }
+  }
+  
+  @media (min-width: 1600px) {
+    .pallets-grid {
+      grid-template-columns: repeat(auto-fill, minmax(850px, 1fr));
+      gap: 32px;
     }
   }
   
@@ -900,7 +920,15 @@
   
   @media (min-width: 1200px) {
     .details-grid {
-      gap: 12px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+  }
+  
+  @media (min-width: 1600px) {
+    .details-grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
     }
   }
   
@@ -908,6 +936,7 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+    text-align: center;
   }
   
   @media (min-width: 1200px) {
@@ -918,6 +947,18 @@
   
   .detail-item.full-width {
     grid-column: span 1;
+  }
+  
+  @media (min-width: 1200px) {
+    .detail-item.full-width {
+      grid-column: span 3;
+    }
+  }
+  
+  @media (min-width: 1600px) {
+    .detail-item.full-width {
+      grid-column: span 4;
+    }
   }
   
   .detail-item label {
