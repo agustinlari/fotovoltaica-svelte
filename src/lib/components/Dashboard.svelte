@@ -71,50 +71,81 @@
 
 <style>
   .dashboard {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
-    padding: 40px 20px;
+    padding: 20px;
   }
   
 
   
   .modules-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 24px;
-    margin-bottom: 60px;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 32px;
+    margin-bottom: 48px;
+  }
+  
+  @media (min-width: 1200px) {
+    .modules-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
   }
   
   .module-card {
     display: flex;
     align-items: center;
-    padding: 30px;
-    background: white;
+    padding: 36px;
+    background: linear-gradient(135deg, #FFFFFF, #F9FAFB);
     border: 2px solid #E5E7EB;
-    border-radius: 16px;
+    border-radius: 20px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     text-align: left;
     width: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .module-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--module-color), rgba(255,255,255,0));
+    opacity: 0;
+    transition: opacity 0.3s ease;
   }
   
   .module-card:hover {
     border-color: var(--module-color);
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.15);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    background: linear-gradient(135deg, #FFFFFF, #F8FAFC);
+  }
+  
+  .module-card:hover::before {
+    opacity: 1;
   }
   
   .module-icon {
-    font-size: 48px;
-    margin-right: 20px;
+    font-size: 52px;
+    margin-right: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 80px;
-    height: 80px;
-    background: linear-gradient(135deg, var(--module-color)15, var(--module-color)25);
-    border-radius: 12px;
+    width: 88px;
+    height: 88px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.2));
+    border-radius: 16px;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+  
+  .module-card:hover .module-icon {
+    transform: scale(1.1) rotate(5deg);
   }
   
   .module-content {
@@ -161,11 +192,19 @@
   }
   
   .stat-card {
-    background: #F9FAFB;
-    padding: 24px;
-    border-radius: 12px;
+    background: linear-gradient(135deg, #FFFFFF, #F8FAFC);
+    padding: 32px 24px;
+    border-radius: 16px;
     text-align: center;
-    border: 1px solid #E5E7EB;
+    border: 2px solid #E5E7EB;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border-color: #D1D5DB;
   }
   
   .stat-number {

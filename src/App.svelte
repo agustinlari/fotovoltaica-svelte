@@ -74,20 +74,24 @@
 
 <style>
   main { 
-    padding: 16px; 
-    max-width: 1200px;
+    padding: 24px; 
+    max-width: 1400px;
     margin: 0 auto;
+    background: #F8FAFC;
+    min-height: 100vh;
   }
   
   @media (max-width: 768px) {
     main {
-      padding: 8px;
+      padding: 16px;
+      background: #F1F5F9;
     }
   }
   
   @media (max-width: 480px) {
     main {
-      padding: 4px;
+      padding: 12px;
+      background: #F1F5F9;
     }
   }
   
@@ -95,14 +99,17 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
-    padding: 0 24px 16px;
-    border-bottom: 2px solid #eee;
+    margin-bottom: 32px;
+    padding: 24px 32px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #E5E7EB;
   }
   
   @media (min-width: 1200px) {
     .app-header {
-      padding: 0 48px 16px;
+      padding: 32px 48px;
     }
   }
   
@@ -113,28 +120,34 @@
   }
   
   .back-btn {
-    background: #F3F4F6;
+    background: linear-gradient(135deg, #F3F4F6, #E5E7EB);
     color: #374151;
     border: 1px solid #D1D5DB;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     font-size: 14px;
     text-decoration: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   }
   
   .back-btn:hover {
-    background: #E5E7EB;
-    transform: translateX(-2px);
+    background: linear-gradient(135deg, #E5E7EB, #D1D5DB);
+    transform: translateX(-2px) translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
   
   .app-header h1 {
-    color: #333;
-    font-size: 28px;
-    font-weight: 600;
+    color: #1F2937;
+    font-size: 32px;
+    font-weight: 700;
     margin: 0;
+    background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
   
   .user-info {
