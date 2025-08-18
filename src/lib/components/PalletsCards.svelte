@@ -4,6 +4,7 @@
   import { apiGet, apiPost, apiPut, apiDelete, getUserEmail, formatUpdateDate } from '../api';
   import ProtectedRoute from './ProtectedRoute.svelte';
   import PhotoGallery from './PhotoGallery.svelte';
+  import BarcodeScanner from './BarcodeScanner.svelte';
   
   // Estado para almacenar emails de usuarios
   let userEmails: Map<string, string> = new Map();
@@ -35,6 +36,7 @@
     isSubmitting: boolean;
     loadingCamiones: boolean;
     searchQuery: string;
+    showBarcodeScanner: boolean;
   };
 
   let state: State = {
@@ -50,6 +52,7 @@
     isSubmitting: false,
     loadingCamiones: false,
     searchQuery: '',
+    showBarcodeScanner: false,
   };
 
   let newPallet: Partial<Pallet> = {};
@@ -104,6 +107,21 @@
   function clearSearch() {
     state.searchQuery = '';
     filterItems();
+  }
+
+  function openBarcodeScanner() {
+    state.showBarcodeScanner = true;
+  }
+
+  function handleBarcodeScan(event: CustomEvent<string>) {
+    const scannedCode = event.detail;
+    state.searchQuery = scannedCode;
+    filterItems();
+    state.showBarcodeScanner = false;
+  }
+
+  function closeBarcodeScanner() {
+    state.showBarcodeScanner = false;
   }
 
   async function loadCamiones() {
@@ -265,7 +283,9 @@
           </button>
         {/if}
       </div>
-      <div class="search-icon">🔍</div>
+      <button class="barcode-scanner-btn" on:click={openBarcodeScanner} title="Escanear código de barras">
+        📷
+      </button>
     </div>
     {#if state.searchQuery && state.filteredItems.length !== state.items.length}
       <div class="search-results">
@@ -541,6 +561,13 @@
     </div>
   </div>
 {/if}
+
+<!-- Escáner de códigos de barras -->
+<BarcodeScanner
+  isOpen={state.showBarcodeScanner}
+  on:scan={handleBarcodeScan}
+  on:close={closeBarcodeScanner}
+/>
 </ProtectedRoute>
 
 <style>
@@ -617,16 +644,26 @@
     color: #374151;
   }
 
-  .search-icon {
+  .barcode-scanner-btn {
     font-size: 20px;
     color: #6B7280;
     padding: 12px;
-    background: #F9FAFB;
-    border: 2px solid #E5E7EB;
+    background: #F0FDF4;
+    border: 2px solid #DCFCE7;
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .barcode-scanner-btn:hover {
+    background: #10B981;
+    color: white;
+    border-color: #10B981;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
   }
 
   .search-results {
