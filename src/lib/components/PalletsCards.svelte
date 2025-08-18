@@ -39,6 +39,7 @@
     showBarcodeScanner: boolean;
     viewMode: 'cards' | 'table';
     isLargeScreen: boolean;
+    showDefectosOnly: boolean;
   };
 
   let state: State = {
@@ -57,6 +58,7 @@
     showBarcodeScanner: false,
     viewMode: 'cards',
     isLargeScreen: false,
+    showDefectosOnly: false,
   };
 
   let newPallet: Partial<Pallet> = {};
@@ -77,29 +79,36 @@
   }
 
   function filterItems() {
-    if (!state.searchQuery.trim()) {
-      state.filteredItems = [...state.items];
-      return;
+    let filtered = [...state.items];
+
+    // Filtrar por defectos si está activado
+    if (state.showDefectosOnly) {
+      filtered = filtered.filter(pallet => pallet.Defecto);
     }
 
-    const query = state.searchQuery.toLowerCase().trim();
-    state.filteredItems = state.items.filter(pallet => {
-      const camionInfo = getCamionInfo(pallet.Descarga);
-      const defectoText = pallet.Defecto ? 'defectuoso' : 'sin defecto';
-      
-      const searchableFields = [
-        pallet.id,
-        camionInfo,
-        defectoText,
-        // Buscar en información del camión asignado
-        pallet.Descarga ? `camion ${pallet.Descarga}` : 'sin asignar',
-        pallet.Defecto ? 'defecto' : 'correcto',
-      ];
+    // Filtrar por búsqueda de texto si hay query
+    if (state.searchQuery.trim()) {
+      const query = state.searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(pallet => {
+        const camionInfo = getCamionInfo(pallet.Descarga);
+        const defectoText = pallet.Defecto ? 'defectuoso' : 'sin defecto';
+        
+        const searchableFields = [
+          pallet.id,
+          camionInfo,
+          defectoText,
+          // Buscar en información del camión asignado
+          pallet.Descarga ? `camion ${pallet.Descarga}` : 'sin asignar',
+          pallet.Defecto ? 'defecto' : 'correcto',
+        ];
 
-      return searchableFields.some(field => 
-        field && field.toString().toLowerCase().includes(query)
-      );
-    });
+        return searchableFields.some(field => 
+          field && field.toString().toLowerCase().includes(query)
+        );
+      });
+    }
+
+    state.filteredItems = filtered;
   }
 
   function handleSearch(event: Event) {
@@ -110,6 +119,11 @@
 
   function clearSearch() {
     state.searchQuery = '';
+    filterItems();
+  }
+
+  function toggleDefectosFilter() {
+    state.showDefectosOnly = !state.showDefectosOnly;
     filterItems();
   }
 
@@ -301,7 +315,7 @@
     {/if}
   </div>
 
-  <!-- Buscador -->
+  <!-- Buscador y Filtros -->
   <div class="search-container">
     <div class="search-box">
       <div class="search-input-wrapper">
@@ -322,9 +336,28 @@
         📷
       </button>
     </div>
-    {#if state.searchQuery && state.filteredItems.length !== state.items.length}
+    
+    <!-- Filtros -->
+    <div class="filters-section">
+      <label class="filter-checkbox" on:click={toggleDefectosFilter}>
+        <input 
+          type="checkbox" 
+          bind:checked={state.showDefectosOnly}
+          on:change={toggleDefectosFilter}
+        />
+        <span class="checkbox-text">Mostrar solo defectuosos</span>
+        <span class="checkbox-count">
+          ({state.items.filter(p => p.Defecto).length})
+        </span>
+      </label>
+    </div>
+    
+    {#if (state.searchQuery && state.filteredItems.length !== state.items.length) || state.showDefectosOnly}
       <div class="search-results">
         Mostrando {state.filteredItems.length} de {state.items.length} pallets
+        {#if state.showDefectosOnly}
+          <span class="filter-active">• Solo defectuosos</span>
+        {/if}
       </div>
     {/if}
   </div>
@@ -782,6 +815,53 @@
     border-radius: 6px;
     max-width: 600px;
     margin: 12px auto 0;
+  }
+  
+  .filter-active {
+    color: #D97706;
+    font-weight: 500;
+  }
+  
+  .filters-section {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+  }
+  
+  .filter-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 10px 16px;
+    background: #FEF2F2;
+    border: 2px solid #FECACA;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-size: 14px;
+  }
+  
+  .filter-checkbox:hover {
+    background: #FEE2E2;
+    border-color: #FCA5A5;
+  }
+  
+  .filter-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: #EF4444;
+  }
+  
+  .checkbox-text {
+    font-weight: 500;
+    color: #DC2626;
+  }
+  
+  .checkbox-count {
+    font-weight: 600;
+    color: #991B1B;
+    font-size: 13px;
   }
   
   .pallets-header {
