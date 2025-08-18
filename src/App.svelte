@@ -96,8 +96,14 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
-    padding-bottom: 16px;
+    padding: 0 24px 16px;
     border-bottom: 2px solid #eee;
+  }
+  
+  @media (min-width: 1200px) {
+    .app-header {
+      padding: 0 48px 16px;
+    }
   }
   
   .header-left {

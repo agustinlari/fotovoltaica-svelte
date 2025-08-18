@@ -232,10 +232,7 @@
 <ProtectedRoute>
 <div class="camiones-container">
   <div class="camiones-header">
-    <div class="header-content">
-      <h2>Gestión de Camiones</h2>
-      <p>Administra la información de los camiones y sus descargas</p>
-    </div>
+
     <button class="btn-primary" on:click={openCreateModal}>
       + Nuevo Camión
     </button>
@@ -298,14 +295,11 @@
   {:else}
     <div class="camiones-grid">
       {#each state.filteredItems as camion (camion.id)}
-        <div class="camion-card">
+        <div class="camion-card" on:click={() => openEditModal(camion)} role="button" tabindex="0" on:keydown={(e) => { if (e.key === 'Enter') openEditModal(camion); }}>
           <div class="card-header">
             <div class="camion-id">#{camion.id}</div>
             <div class="card-actions">
-              <button class="btn-edit" on:click={() => openEditModal(camion)} title="Editar">
-                ✏️
-              </button>
-              <button class="btn-delete" on:click={() => openDeleteModal(camion)} title="Eliminar">
+              <button class="btn-delete" on:click|stopPropagation={() => openDeleteModal(camion)} title="Eliminar">
                 🗑️
               </button>
             </div>
@@ -669,26 +663,14 @@
   
   .camiones-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     margin-bottom: 32px;
     padding-bottom: 20px;
     border-bottom: 2px solid #E5E7EB;
   }
   
-  .header-content h2 {
-    font-size: 28px;
-    font-weight: 700;
-    color: #1F2937;
-    margin: 0 0 8px 0;
-  }
-  
-  .header-content p {
-    color: #6B7280;
-    margin: 0;
-    font-size: 16px;
-  }
-  
+
   .btn-primary {
     background: linear-gradient(135deg, #3B82F6, #1D4ED8);
     color: white;
@@ -785,6 +767,7 @@
     overflow: hidden;
     transition: all 0.3s ease;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
   }
   
   .camion-card:hover {
@@ -813,7 +796,7 @@
     gap: 8px;
   }
   
-  .btn-edit, .btn-delete {
+  .btn-delete {
     background: none;
     border: none;
     padding: 8px;
@@ -821,10 +804,6 @@
     cursor: pointer;
     transition: all 0.2s ease;
     font-size: 16px;
-  }
-  
-  .btn-edit:hover {
-    background: #FEF3C7;
   }
   
   .btn-delete:hover {
@@ -1117,7 +1096,7 @@
     .camiones-header {
       flex-direction: column;
       gap: 16px;
-      align-items: flex-start;
+      align-items: center;
     }
     
     .camiones-grid {

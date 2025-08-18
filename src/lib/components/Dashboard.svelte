@@ -33,11 +33,7 @@
 </script>
 
 <div class="dashboard">
-  <div class="dashboard-header">
-    <h1>Sistema de Gestión Fotovoltaica</h1>
-    <p>Selecciona un módulo para comenzar</p>
-  </div>
-  
+ 
   <div class="modules-grid">
     {#each modules as module}
       <button 
@@ -80,23 +76,7 @@
     padding: 40px 20px;
   }
   
-  .dashboard-header {
-    text-align: center;
-    margin-bottom: 50px;
-  }
-  
-  .dashboard-header h1 {
-    font-size: 32px;
-    font-weight: 700;
-    color: #1F2937;
-    margin: 0 0 12px 0;
-  }
-  
-  .dashboard-header p {
-    font-size: 18px;
-    color: #6B7280;
-    margin: 0;
-  }
+
   
   .modules-grid {
     display: grid;
@@ -206,14 +186,7 @@
       padding: 20px 16px;
     }
     
-    .dashboard-header h1 {
-      font-size: 28px;
-    }
-    
-    .dashboard-header p {
-      font-size: 16px;
-    }
-    
+
     .modules-grid {
       grid-template-columns: 1fr;
       gap: 16px;

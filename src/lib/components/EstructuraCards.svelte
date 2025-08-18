@@ -232,10 +232,7 @@
 <ProtectedRoute>
 <div class="estructuras-container">
   <div class="estructuras-header">
-    <div class="header-content">
-      <h2>Gestión de Estructuras</h2>
-      <p>Administra la información de las estructuras fotovoltaicas</p>
-    </div>
+
     <button class="btn-primary" on:click={openCreateModal}>
       + Nueva Estructura
     </button>
@@ -298,14 +295,11 @@
   {:else}
     <div class="estructuras-grid">
       {#each state.filteredItems as estructura (estructura.id)}
-        <div class="estructura-card">
+        <div class="estructura-card" on:click={() => openEditModal(estructura)} role="button" tabindex="0" on:keydown={(e) => { if (e.key === 'Enter') openEditModal(estructura); }}>
           <div class="card-header">
             <div class="estructura-id">#{estructura.id}</div>
             <div class="card-actions">
-              <button class="btn-edit" on:click={() => openEditModal(estructura)} title="Editar">
-                ✏️
-              </button>
-              <button class="btn-delete" on:click={() => openDeleteModal(estructura)} title="Eliminar">
+              <button class="btn-delete" on:click|stopPropagation={() => openDeleteModal(estructura)} title="Eliminar">
                 🗑️
               </button>
             </div>
@@ -665,25 +659,13 @@
   
   .estructuras-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     margin-bottom: 32px;
     padding-bottom: 20px;
     border-bottom: 2px solid #E5E7EB;
   }
   
-  .header-content h2 {
-    font-size: 28px;
-    font-weight: 700;
-    color: #1F2937;
-    margin: 0 0 8px 0;
-  }
-  
-  .header-content p {
-    color: #6B7280;
-    margin: 0;
-    font-size: 16px;
-  }
   
   .btn-primary {
     background: linear-gradient(135deg, #10B981, #059669);
@@ -781,6 +763,7 @@
     overflow: hidden;
     transition: all 0.3s ease;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
   }
   
   .estructura-card:hover {
@@ -809,7 +792,7 @@
     gap: 8px;
   }
   
-  .btn-edit, .btn-delete {
+  .btn-delete {
     background: none;
     border: none;
     padding: 8px;
@@ -817,10 +800,6 @@
     cursor: pointer;
     transition: all 0.2s ease;
     font-size: 16px;
-  }
-  
-  .btn-edit:hover {
-    background: #FEF3C7;
   }
   
   .btn-delete:hover {
@@ -1113,7 +1092,7 @@
     .estructuras-header {
       flex-direction: column;
       gap: 16px;
-      align-items: flex-start;
+      align-items: center;
     }
     
     .estructuras-grid {
