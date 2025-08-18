@@ -140,9 +140,15 @@
   .user-info {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 20px;
     font-size: 14px;
     color: #666;
+  }
+  
+  @media (min-width: 1200px) {
+    .user-info {
+      gap: 32px;
+    }
   }
   
   .logout-btn {
