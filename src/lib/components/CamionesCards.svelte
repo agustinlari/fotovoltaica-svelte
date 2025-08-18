@@ -352,8 +352,12 @@
                     <div class="update-info">
                       <span class="update-date">{formatUpdateDate(camion.updated_at)}</span>
                       {#if camion.updated_by}
-                        {#await getUserEmailCached(camion.updated_by) then email}
+                        {#await getUserDisplayName(camion.updated_by)}
+                          <span class="update-user">...</span>
+                        {:then email}
                           <span class="update-user">{email}</span>
+                        {:catch}
+                          <span class="update-user">{camion.updated_by}</span>
                         {/await}
                       {/if}
                     </div>
