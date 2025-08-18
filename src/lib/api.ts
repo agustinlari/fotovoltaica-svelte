@@ -213,6 +213,8 @@ export type Camion = {
   Container?: string | null;
   Albaran?: string | null;
   NombreConductor?: string | null;
+  updated_at?: string | null;
+  updated_by?: string | null;
 };
 
 export type Estructura = {
@@ -224,12 +226,73 @@ export type Estructura = {
   PackingList?: string | null;
   Albaran?: string | null;
   FechaDescarga?: string | null;
+  modified_at?: string | null;
+  modified_by?: string | null;
 };
 
 export type Pallet = {
   id: string;
   Descarga?: number | null;
   Defecto?: boolean | null;
+  updated_at?: string | null;
+  updated_by?: string | null;
 };
+
+export type Usuario = {
+  id: number;
+  keycloak_id: string;
+  email: string;
+  rol: string;
+  created_at: string;
+  updated_at?: string | null;
+};
+
+// Cache para usuarios
+const usuariosCache = new Map<string, string>();
+
+// Función para obtener el email de un usuario por su keycloak_id
+export async function getUserEmail(keycloakId: string | null): Promise<string> {
+  if (!keycloakId) return 'Usuario desconocido';
+  
+  // Verificar cache
+  if (usuariosCache.has(keycloakId)) {
+    return usuariosCache.get(keycloakId)!;
+  }
+  
+  try {
+    const response = await fetch(`${API_BASE}/usuarios/${keycloakId}`, {
+      headers: getAuthHeaders()
+    });
+    
+    if (response.ok) {
+      const usuario: Usuario = await response.json();
+      const email = usuario.email;
+      usuariosCache.set(keycloakId, email);
+      return email;
+    }
+  } catch (error) {
+    console.error('Error obteniendo usuario:', error);
+  }
+  
+  return keycloakId; // Fallback al ID si no podemos obtener el email
+}
+
+// Función para formatear fecha de forma legible
+export function formatUpdateDate(dateString: string | null): string {
+  if (!dateString) return '';
+  
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (error) {
+    return dateString;
+  }
+}
 
 

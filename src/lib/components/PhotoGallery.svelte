@@ -150,6 +150,11 @@
 
   // Activar input de archivo desde galería o cámara
   function triggerFileInput(useCamera: boolean = false) {
+    if (!fileInput) {
+      console.error('File input not available');
+      return;
+    }
+    
     if (useCamera) {
       fileInput.setAttribute('capture', 'environment');
     } else {
@@ -182,32 +187,35 @@
 </script>
 
 <div class="photo-gallery" class:modal-mode={modalMode}>
-  {#if !readonly && !modalMode}
-    <div class="upload-section">
-      <div class="upload-buttons">
-        <button class="btn-upload" on:click={() => triggerFileInput(false)} disabled={state.uploading}>
-          📁 Galería
-        </button>
-        <button class="btn-upload" on:click={() => triggerFileInput(true)} disabled={state.uploading}>
-          📷 Cámara
-        </button>
-      </div>
-      
-      <input
-        bind:this={fileInput}
-        type="file"
-        accept="image/*"
-        style="display: none;"
-        on:change={handleFileSelect}
-      />
-      
-      {#if state.uploading}
-        <div class="upload-progress">
-          <div class="spinner-small"></div>
-          <span>Subiendo...</span>
+  {#if !readonly}
+    <!-- Hidden file input - always present when not readonly -->
+    <input
+      bind:this={fileInput}
+      type="file"
+      accept="image/*"
+      style="display: none;"
+      on:change={handleFileSelect}
+    />
+    
+    {#if !modalMode}
+      <div class="upload-section">
+        <div class="upload-buttons">
+          <button class="btn-upload" on:click={() => triggerFileInput(false)} disabled={state.uploading}>
+            📁 Galería
+          </button>
+          <button class="btn-upload" on:click={() => triggerFileInput(true)} disabled={state.uploading}>
+            📷 Cámara
+          </button>
         </div>
-      {/if}
-    </div>
+        
+        {#if state.uploading}
+          <div class="upload-progress">
+            <div class="spinner-small"></div>
+            <span>Subiendo...</span>
+          </div>
+        {/if}
+      </div>
+    {/if}
   {/if}
 
   {#if state.error}

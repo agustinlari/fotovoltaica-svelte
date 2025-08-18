@@ -1,9 +1,26 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { Pallet, Camion } from '../api';
-  import { apiGet, apiPost, apiPut, apiDelete } from '../api';
+  import { apiGet, apiPost, apiPut, apiDelete, getUserEmail, formatUpdateDate } from '../api';
   import ProtectedRoute from './ProtectedRoute.svelte';
   import PhotoGallery from './PhotoGallery.svelte';
+  
+  // Estado para almacenar emails de usuarios
+  let userEmails: Map<string, string> = new Map();
+  
+  // Función para obtener y cachear el email del usuario
+  async function getUserDisplayName(keycloakId: string | null): Promise<string> {
+    if (!keycloakId) return 'Usuario desconocido';
+    
+    if (userEmails.has(keycloakId)) {
+      return userEmails.get(keycloakId)!;
+    }
+    
+    const email = await getUserEmail(keycloakId);
+    userEmails.set(keycloakId, email);
+    userEmails = userEmails; // Reactivity
+    return email;
+  }
 
   type State = {
     loading: boolean;
@@ -319,13 +336,30 @@
                 </span>
               </div>
               
-              {#if pallet.updated_at}
-                <div class="detail-item full-width">
-                  <label>Última Actualización</label>
-                  <span>{new Date(pallet.updated_at).toLocaleDateString()}</span>
-                </div>
-              {/if}
             </div>
+
+            <!-- Información de auditoría -->
+            {#if pallet.updated_at || pallet.updated_by}
+              <div class="audit-info">
+                <div class="audit-item">
+                  <label>Última actualización</label>
+                  <span class="audit-details">
+                    {#if pallet.updated_at}
+                      {formatUpdateDate(pallet.updated_at)}
+                    {/if}
+                    {#if pallet.updated_by}
+                      {#await getUserDisplayName(pallet.updated_by)}
+                        <span class="user-loading">...</span>
+                      {:then email}
+                        <span class="user-name">por {email}</span>
+                      {:catch}
+                        <span class="user-name">por {pallet.updated_by}</span>
+                      {/await}
+                    {/if}
+                  </span>
+                </div>
+              </div>
+            {/if}
 
             <!-- Vista previa de fotos (solo lectura) -->
             <PhotoGallery tableName="pallets" recordId={pallet.id} readonly={true} />
@@ -891,6 +925,44 @@
     padding: 8px 12px;
     border-radius: 6px;
     border: 1px solid #D1D5DB;
+  }
+  
+  .audit-info {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #E5E7EB;
+  }
+  
+  .audit-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .audit-item label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6B7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .audit-details {
+    font-size: 12px;
+    color: #374151;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .user-name {
+    font-style: italic;
+    color: #6B7280;
+  }
+  
+  .user-loading {
+    color: #9CA3AF;
+    font-style: italic;
   }
   
   /* Modal Styles */

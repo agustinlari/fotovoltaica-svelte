@@ -1,10 +1,27 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { Estructura } from '../api';
-  import { apiGet, apiPost, apiPut, apiDelete } from '../api';
+  import { apiGet, apiPost, apiPut, apiDelete, getUserEmail, formatUpdateDate } from '../api';
   import { formatDdMmYyyyFromIso, formatYyyyMmDdFromIso, toIsoMidnight } from '../date';
   import ProtectedRoute from './ProtectedRoute.svelte';
   import PhotoGallery from './PhotoGallery.svelte';
+  
+  // Estado para almacenar emails de usuarios
+  let userEmails: Map<string, string> = new Map();
+  
+  // Función para obtener y cachear el email del usuario
+  async function getUserDisplayName(keycloakId: string | null): Promise<string> {
+    if (!keycloakId) return 'Usuario desconocido';
+    
+    if (userEmails.has(keycloakId)) {
+      return userEmails.get(keycloakId)!;
+    }
+    
+    const email = await getUserEmail(keycloakId);
+    userEmails.set(keycloakId, email);
+    userEmails = userEmails; // Reactivity
+    return email;
+  }
 
   type State = {
     loading: boolean;
@@ -302,6 +319,29 @@
                 <span>{estructura.FechaDescarga ? formatDdMmYyyyFromIso(estructura.FechaDescarga) : '-'}</span>
               </div>
             </div>
+
+            <!-- Información de auditoría -->
+            {#if estructura.modified_at || estructura.modified_by}
+              <div class="audit-info">
+                <div class="audit-item">
+                  <label>Última actualización</label>
+                  <span class="audit-details">
+                    {#if estructura.modified_at}
+                      {formatUpdateDate(estructura.modified_at)}
+                    {/if}
+                    {#if estructura.modified_by}
+                      {#await getUserDisplayName(estructura.modified_by)}
+                        <span class="user-loading">...</span>
+                      {:then email}
+                        <span class="user-name">por {email}</span>
+                      {:catch}
+                        <span class="user-name">por {estructura.modified_by}</span>
+                      {/await}
+                    {/if}
+                  </span>
+                </div>
+              </div>
+            {/if}
 
             <!-- Vista previa de fotos (solo lectura) -->
             <PhotoGallery tableName="estructura" recordId={estructura.id} readonly={true} />
@@ -823,6 +863,44 @@
     font-size: 14px;
     color: #1F2937;
     font-weight: 500;
+  }
+  
+  .audit-info {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #E5E7EB;
+  }
+  
+  .audit-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .audit-item label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6B7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .audit-details {
+    font-size: 12px;
+    color: #374151;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .user-name {
+    font-style: italic;
+    color: #6B7280;
+  }
+  
+  .user-loading {
+    color: #9CA3AF;
+    font-style: italic;
   }
   
   /* Modal Styles */
