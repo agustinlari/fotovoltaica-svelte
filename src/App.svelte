@@ -52,10 +52,12 @@
           {/if}
         </h1>
       </div>
-      <div class="user-info">
-        <span>Bienvenido, {$currentUser?.name || $currentUser?.email}</span>
-        <button class="logout-btn" on:click={handleLogout}>Cerrar Sesión</button>
-      </div>
+      {#if currentView === 'dashboard'}
+        <div class="user-info">
+          <span class="welcome-text">Bienvenido, {$currentUser?.name || $currentUser?.email}</span>
+          <button class="logout-btn" on:click={handleLogout}>Cerrar Sesión</button>
+        </div>
+      {/if}
     </header>
     
     {#if currentView === 'dashboard'}
@@ -75,6 +77,18 @@
     padding: 16px; 
     max-width: 1200px;
     margin: 0 auto;
+  }
+  
+  @media (max-width: 768px) {
+    main {
+      padding: 8px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    main {
+      padding: 4px;
+    }
   }
   
   .app-header {
@@ -205,7 +219,23 @@
     .app-header {
       flex-direction: column;
       gap: 16px;
-      align-items: flex-start;
+      align-items: center;
+      text-align: center;
+    }
+    
+    .header-left {
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .app-header h1 {
+      font-size: 24px;
+    }
+    
+    .user-info {
+      flex-direction: column;
+      gap: 8px;
+      font-size: 13px;
     }
     
     .tabs {
@@ -215,6 +245,27 @@
     .tabs button {
       flex: 1;
       min-width: 120px;
+    }
+  }
+  
+  @media (max-width: 640px) {
+    .app-header {
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .header-left {
+      width: 100%;
+      justify-content: center;
+    }
+    
+    .user-info {
+      width: 100%;
+      justify-content: center;
+    }
+    
+    .app-header h1 {
+      font-size: 20px;
     }
   }
 </style>

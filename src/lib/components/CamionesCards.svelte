@@ -34,6 +34,7 @@
 
   let newCamion: Partial<Camion> = {};
   let editCamion: Partial<Camion> = {};
+  let photoGalleryRef: any = null;
 
   async function load() {
     try {
@@ -302,8 +303,8 @@
               </div>
             </div>
 
-            <!-- Galería de fotos -->
-            <PhotoGallery tableName="camiones" recordId={camion.id} />
+            <!-- Vista previa de fotos (solo lectura) -->
+            <PhotoGallery tableName="camiones" recordId={camion.id} readonly={true} />
           </div>
         </div>
       {/each}
@@ -428,6 +429,20 @@
           </div>
         </div>
         
+        <!-- Gestión de Fotos -->
+        <div class="photos-section">
+          <h4>Fotos</h4>
+          <div class="photo-controls">
+            <button type="button" class="btn-upload" on:click={() => photoGalleryRef?.triggerGallery()} disabled={photoGalleryRef?.getState()?.uploading}>
+              📁 Galería
+            </button>
+            <button type="button" class="btn-upload" on:click={() => photoGalleryRef?.triggerCamera()} disabled={photoGalleryRef?.getState()?.uploading}>
+              📷 Cámara
+            </button>
+          </div>
+          <PhotoGallery bind:this={photoGalleryRef} tableName="camiones" recordId={state.selectedCamion?.id} readonly={false} modalMode={true} />
+        </div>
+        
         {#if state.error}
           <div class="form-error">{state.error}</div>
         {/if}
@@ -481,6 +496,18 @@
     max-width: 1400px;
     margin: 0 auto;
     padding: 24px;
+  }
+  
+  @media (max-width: 768px) {
+    .camiones-container {
+      padding: 12px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .camiones-container {
+      padding: 8px;
+    }
   }
 
   /* Search Styles */
@@ -667,6 +694,13 @@
     gap: 24px;
   }
   
+  @media (min-width: 1200px) {
+    .camiones-grid {
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+    }
+  }
+  
   .camion-card {
     background: white;
     border: 1px solid #E5E7EB;
@@ -724,8 +758,20 @@
     padding: 20px;
   }
   
+  @media (min-width: 1200px) {
+    .card-content {
+      padding: 16px;
+    }
+  }
+  
   .main-info {
     margin-bottom: 20px;
+  }
+  
+  @media (min-width: 1200px) {
+    .main-info {
+      margin-bottom: 16px;
+    }
   }
   
   .main-info h3 {
@@ -747,10 +793,22 @@
     gap: 16px;
   }
   
+  @media (min-width: 1200px) {
+    .details-grid {
+      gap: 12px;
+    }
+  }
+  
   .detail-item {
     display: flex;
     flex-direction: column;
     gap: 4px;
+  }
+  
+  @media (min-width: 1200px) {
+    .detail-item {
+      gap: 2px;
+    }
   }
   
   .detail-item.full-width {
@@ -884,6 +942,51 @@
     color: #DC2626;
     font-size: 14px;
     margin: 8px 0 0 0;
+  }
+  
+  .photos-section {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #E5E7EB;
+  }
+  
+  .photos-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #374151;
+  }
+  
+  .photo-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  
+  .btn-upload {
+    background: #F3F4F6;
+    color: #374151;
+    border: 1px solid #D1D5DB;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .btn-upload:hover:not(:disabled) {
+    background: #E5E7EB;
+    transform: translateY(-1px);
+  }
+  
+  .btn-upload:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
   }
   
   .modal-actions {

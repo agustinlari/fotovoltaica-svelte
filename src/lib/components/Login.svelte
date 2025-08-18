@@ -98,12 +98,17 @@
 
 <style>
   .login-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     padding: 20px;
+    box-sizing: border-box;
   }
 
   .login-card {
@@ -252,11 +257,39 @@
 
   @media (max-width: 480px) {
     .login-container {
-      padding: 10px;
+      padding: 16px;
+      align-items: flex-start;
+      padding-top: 10vh;
     }
     
     .login-card {
-      padding: 30px 20px;
+      padding: 24px 20px;
+      width: 100%;
+      max-width: none;
+    }
+    
+    .login-header h1 {
+      font-size: 22px;
+    }
+    
+    .form-group input {
+      padding: 14px 16px;
+      font-size: 16px; /* Previene zoom en iOS */
+    }
+    
+    .login-button {
+      padding: 16px 20px;
+      font-size: 16px;
+    }
+  }
+  
+  @media (max-width: 320px) {
+    .login-card {
+      padding: 20px 16px;
+    }
+    
+    .login-header h1 {
+      font-size: 20px;
     }
   }
 </style>

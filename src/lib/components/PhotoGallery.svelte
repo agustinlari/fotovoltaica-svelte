@@ -4,6 +4,7 @@
   export let tableName: string;
   export let recordId: string | number;
   export let readonly: boolean = false;
+  export let modalMode: boolean = false;
 
   type Photo = {
     id: number;
@@ -161,10 +162,27 @@
   $: if (tableName && recordId) {
     loadPhotos();
   }
+  
+  // Exponer funciones para usar desde componente padre
+  export function triggerGallery() {
+    triggerFileInput(false);
+  }
+  
+  export function triggerCamera() {
+    triggerFileInput(true);
+  }
+  
+  export function getState() {
+    return state;
+  }
+  
+  export function getPhotos() {
+    return state.photos;
+  }
 </script>
 
-<div class="photo-gallery">
-  {#if !readonly}
+<div class="photo-gallery" class:modal-mode={modalMode}>
+  {#if !readonly && !modalMode}
     <div class="upload-section">
       <div class="upload-buttons">
         <button class="btn-upload" on:click={() => triggerFileInput(false)} disabled={state.uploading}>
@@ -256,6 +274,10 @@
 <style>
   .photo-gallery {
     margin-top: 16px;
+  }
+  
+  .photo-gallery.modal-mode {
+    margin-top: 0;
   }
 
   .upload-section {
