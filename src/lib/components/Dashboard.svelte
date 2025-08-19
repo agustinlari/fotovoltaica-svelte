@@ -59,6 +59,13 @@
       description: 'Seguimiento de pallets y contenido',
       icon: '📦',
       color: '#F59E0B'
+    },
+    {
+      id: 'informes',
+      title: 'Informes',
+      description: 'Reportes de descarga por camión',
+      icon: '📊',
+      color: '#8B5CF6'
     }
   ];
   

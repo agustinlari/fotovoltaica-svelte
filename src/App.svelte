@@ -5,11 +5,12 @@
   import EstructuraCards from './lib/components/EstructuraCards.svelte'
   import Pallets from './lib/components/Pallets.svelte'
   import PalletsCards from './lib/components/PalletsCards.svelte'
+  import Informes from './lib/components/Informes.svelte'
   import Login from './lib/components/Login.svelte'
   import Dashboard from './lib/components/Dashboard.svelte'
   import { authStore, isAuthenticated, isLoading, currentUser } from './lib/stores/auth'
   
-  let currentView: 'dashboard' | 'camiones' | 'estructura' | 'pallets' = 'dashboard'
+  let currentView: 'dashboard' | 'camiones' | 'estructura' | 'pallets' | 'informes' = 'dashboard'
 
   function handleLogout() {
     authStore.logout()
@@ -56,6 +57,8 @@
               Estructura
             {:else if currentView === 'pallets'}
               Pallets
+            {:else if currentView === 'informes'}
+              Informes
             {/if}
           </h1>
         </div>
@@ -71,6 +74,8 @@
       <EstructuraCards />
     {:else if currentView === 'pallets'}
       <PalletsCards />
+    {:else if currentView === 'informes'}
+      <Informes />
     {/if}
   </main>
 {/if}
