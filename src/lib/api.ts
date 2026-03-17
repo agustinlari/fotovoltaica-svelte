@@ -6,7 +6,7 @@ function getApiBase(): string {
   }
   
   // Si estamos en producción (usando HTTPS), usar la URL de producción
-  if (window.location.protocol === 'https:' && window.location.hostname === 'aplicaciones.osmos.es') {
+  if (window.location.protocol === 'https:' && window.location.hostname === 'aplicacionesosmos.com') {
     return `${window.location.protocol}//${window.location.host}/api/fotovoltaica`;
   }
   

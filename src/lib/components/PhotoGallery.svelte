@@ -38,7 +38,7 @@
 
   // Función para obtener la URL base de la API
   function getApiBase(): string {
-    if (window.location.protocol === 'https:' && window.location.hostname === 'aplicaciones.osmos.es') {
+    if (window.location.protocol === 'https:' && window.location.hostname === 'aplicacionesosmos.com') {
       return `${window.location.protocol}//${window.location.host}/api/fotovoltaica`;
     }
     return 'http://localhost:8787';
@@ -46,7 +46,7 @@
 
   // Función para obtener la URL base de uploads
   function getUploadsBase(): string {
-    if (window.location.protocol === 'https:' && window.location.hostname === 'aplicaciones.osmos.es') {
+    if (window.location.protocol === 'https:' && window.location.hostname === 'aplicacionesosmos.com') {
       return `${window.location.protocol}//${window.location.host}/public/fotovoltaica-uploads`;
     }
     return 'http://localhost:8787/uploads';
