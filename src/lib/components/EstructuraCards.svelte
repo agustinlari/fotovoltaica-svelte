@@ -904,7 +904,7 @@
     background: white;
     border: 1px solid #E5E7EB;
     border-radius: 12px;
-    overflow: hidden;
+    overflow-x: auto;
     transition: all 0.3s ease;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     cursor: pointer;
@@ -1258,7 +1258,7 @@
     background: white;
     border-radius: 12px;
     border: 1px solid #E5E7EB;
-    overflow: hidden;
+    overflow-x: auto;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
   
