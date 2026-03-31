@@ -1,8 +1,19 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { authStore } from '../stores/auth';
+  import { Sun } from 'lucide-svelte';
 
   const dispatch = createEventDispatcher();
+
+  function getRegisterUrl(): string {
+    const base = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://localhost:8080/auth'
+      : `${window.location.protocol}//${window.location.host}/auth`;
+    const redirect = encodeURIComponent(`${window.location.protocol}//${window.location.host}/fotovoltaica/`);
+    return `${base}/realms/master/protocol/openid-connect/registrations?client_id=fotovoltaica-client&response_type=code&scope=openid&redirect_uri=${redirect}`;
+  }
+
+  const registerUrl = getRegisterUrl();
 
   let username = '';
   let password = '';
@@ -11,7 +22,7 @@
 
   async function handleLogin() {
     if (!username || !password) {
-      error = 'Por favor, introduce usuario y contraseña';
+      error = 'Por favor, introduce usuario y contrasena';
       return;
     }
 
@@ -22,7 +33,7 @@
       await authStore.login(username, password);
       dispatch('loginSuccess');
     } catch (err: any) {
-      error = err.message || 'Error de autenticación';
+      error = err.message || 'Error de autenticacion';
       console.error('Login error:', err);
     } finally {
       isLoading = false;
@@ -39,8 +50,11 @@
 <div class="login-container">
   <div class="login-card">
     <div class="login-header">
-      <h1>Instalación Fotovoltaica</h1>
-      <p>Inicia sesión para acceder al sistema</p>
+      <div class="logo-icon">
+        <Sun size={32} strokeWidth={1.5} />
+      </div>
+      <h1>Fotovoltaica</h1>
+      <p>Inicia sesion para acceder al sistema</p>
     </div>
 
     <form on:submit|preventDefault={handleLogin} class="login-form">
@@ -58,13 +72,13 @@
       </div>
 
       <div class="form-group">
-        <label for="password">Contraseña</label>
+        <label for="password">Contrasena</label>
         <input
           id="password"
           type="password"
           bind:value={password}
           on:keypress={handleKeyPress}
-          placeholder="Tu contraseña"
+          placeholder="Tu contrasena"
           autocomplete="current-password"
           disabled={isLoading}
         />
@@ -76,22 +90,23 @@
         </div>
       {/if}
 
-      <button 
-        type="submit" 
+      <button
+        type="submit"
         class="login-button"
         disabled={isLoading || !username || !password}
       >
         {#if isLoading}
           <span class="spinner"></span>
-          Iniciando sesión...
+          Iniciando sesion...
         {:else}
-          Iniciar Sesión
+          Iniciar sesion
         {/if}
       </button>
     </form>
 
-    <div class="login-footer">
-      <p>Sistema de gestión de instalación fotovoltaica</p>
+    <div class="register-link">
+      <span>No tienes cuenta?</span>
+      <a href={registerUrl} rel="noopener">Registrarse</a>
     </div>
   </div>
 </div>
@@ -106,46 +121,46 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #F8FAFC;
     padding: 20px;
     box-sizing: border-box;
   }
 
   .login-card {
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    border: 1px solid #E5E7EB;
     padding: 40px;
     width: 100%;
-    max-width: 400px;
-    animation: slideIn 0.3s ease-out;
-  }
-
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(-20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    max-width: 380px;
   }
 
   .login-header {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 32px;
+  }
+
+  .logo-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    background: #FEF3C7;
+    color: #D97706;
+    border-radius: 14px;
+    margin-bottom: 16px;
   }
 
   .login-header h1 {
-    color: #333;
-    font-size: 24px;
+    color: #1F2937;
+    font-size: 22px;
     font-weight: 600;
-    margin: 0 0 8px 0;
+    margin: 0 0 6px 0;
   }
 
   .login-header p {
-    color: #666;
+    color: #6B7280;
     font-size: 14px;
     margin: 0;
   }
@@ -164,47 +179,48 @@
 
   .form-group label {
     font-weight: 500;
-    color: #333;
+    color: #374151;
     font-size: 14px;
   }
 
   .form-group input {
-    padding: 12px 16px;
-    border: 2px solid #e1e5e9;
-    border-radius: 8px;
-    font-size: 14px;
+    padding: 12px 14px;
+    border: 1px solid #D1D5DB;
+    border-radius: 10px;
+    font-size: 16px;
     transition: border-color 0.2s ease;
+    background: white;
   }
 
   .form-group input:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
 
   .form-group input:disabled {
-    background-color: #f5f5f5;
+    background-color: #F9FAFB;
     cursor: not-allowed;
   }
 
   .error-message {
-    background-color: #fee;
-    color: #c33;
-    padding: 12px 16px;
-    border-radius: 8px;
-    border: 1px solid #fcc;
+    background-color: #FEF2F2;
+    color: #DC2626;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #FECACA;
     font-size: 14px;
     text-align: center;
   }
 
   .login-button {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #1F2937;
     color: white;
     border: none;
     padding: 14px 20px;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
@@ -214,18 +230,16 @@
   }
 
   .login-button:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    background: #111827;
   }
 
   .login-button:active:not(:disabled) {
-    transform: translateY(0);
+    transform: scale(0.98);
   }
 
   .login-button:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
-    transform: none;
   }
 
   .spinner {
@@ -242,17 +256,24 @@
     100% { transform: rotate(360deg); }
   }
 
-  .login-footer {
+  .register-link {
     text-align: center;
-    margin-top: 30px;
+    margin-top: 24px;
     padding-top: 20px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid #E5E7EB;
+    font-size: 14px;
+    color: #6B7280;
   }
 
-  .login-footer p {
-    color: #999;
-    font-size: 12px;
-    margin: 0;
+  .register-link a {
+    color: #3B82F6;
+    text-decoration: none;
+    font-weight: 500;
+    margin-left: 4px;
+  }
+
+  .register-link a:hover {
+    text-decoration: underline;
   }
 
   @media (max-width: 480px) {
@@ -261,35 +282,10 @@
       align-items: flex-start;
       padding-top: 10vh;
     }
-    
+
     .login-card {
-      padding: 24px 20px;
-      width: 100%;
+      padding: 28px 20px;
       max-width: none;
-    }
-    
-    .login-header h1 {
-      font-size: 22px;
-    }
-    
-    .form-group input {
-      padding: 14px 16px;
-      font-size: 16px; /* Previene zoom en iOS */
-    }
-    
-    .login-button {
-      padding: 16px 20px;
-      font-size: 16px;
-    }
-  }
-  
-  @media (max-width: 320px) {
-    .login-card {
-      padding: 20px 16px;
-    }
-    
-    .login-header h1 {
-      font-size: 20px;
     }
   }
 </style>

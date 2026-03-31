@@ -6,21 +6,16 @@
   import ProtectedRoute from './ProtectedRoute.svelte';
   import PhotoGallery from './PhotoGallery.svelte';
   import BarcodeScanner from './BarcodeScanner.svelte';
-  
-  // Estado para almacenar emails de usuarios
+  import { Plus, Search, X, ScanLine, Trash2, LayoutGrid, Table, FolderOpen, Camera } from 'lucide-svelte';
+
   let userEmails: Map<string, string> = new Map();
-  
-  // Función para obtener y cachear el email del usuario
+
   async function getUserDisplayName(keycloakId: string | null): Promise<string> {
     if (!keycloakId) return 'Usuario desconocido';
-    
-    if (userEmails.has(keycloakId)) {
-      return userEmails.get(keycloakId)!;
-    }
-    
+    if (userEmails.has(keycloakId)) return userEmails.get(keycloakId)!;
     const email = await getUserEmail(keycloakId);
     userEmails.set(keycloakId, email);
-    userEmails = userEmails; // Reactivity
+    userEmails = userEmails;
     return email;
   }
 
@@ -78,24 +73,15 @@
       state.filteredItems = [...state.items];
       return;
     }
-
     const query = state.searchQuery.toLowerCase().trim();
     state.filteredItems = state.items.filter(camion => {
       const searchableFields = [
-        camion.DNI,
-        camion.Matricula,
-        camion.UbicacionCampa,
-        camion.Container,
-        camion.Albaran,
-        camion.NombreConductor,
+        camion.DNI, camion.Matricula, camion.UbicacionCampa,
+        camion.Container, camion.Albaran, camion.NombreConductor,
         camion.id?.toString(),
-        // Buscar también en fecha formateada
         camion.FechaDescarga ? formatDdMmYyyyFromIso(camion.FechaDescarga) : ''
       ];
-
-      return searchableFields.some(field => 
-        field && field.toString().toLowerCase().includes(query)
-      );
+      return searchableFields.some(field => field && field.toString().toLowerCase().includes(query));
     });
   }
 
@@ -110,40 +96,23 @@
     filterItems();
   }
 
-  function openBarcodeScanner() {
-    state.showBarcodeScanner = true;
-  }
+  function openBarcodeScanner() { state.showBarcodeScanner = true; }
 
   function handleBarcodeScan(event: CustomEvent<string>) {
-    const scannedCode = event.detail;
-    state.searchQuery = scannedCode;
+    state.searchQuery = event.detail;
     filterItems();
     state.showBarcodeScanner = false;
   }
 
-  function closeBarcodeScanner() {
-    state.showBarcodeScanner = false;
-  }
+  function closeBarcodeScanner() { state.showBarcodeScanner = false; }
 
   function openCreateModal() {
-    newCamion = {
-      DNI: '',
-      Matricula: '',
-      UbicacionCampa: '',
-      Container: '',
-      Albaran: '',
-      NombreConductor: '',
-      FechaDescarga: null
-    };
+    newCamion = { DNI: '', Matricula: '', UbicacionCampa: '', Container: '', Albaran: '', NombreConductor: '', FechaDescarga: null };
     state.showCreateModal = true;
   }
 
   function openEditModal(camion: Camion) {
-    editCamion = { 
-      ...camion,
-      // Convertir fecha ISO a formato YYYY-MM-DD para el input
-      FechaDescarga: camion.FechaDescarga ? formatYyyyMmDdFromIso(camion.FechaDescarga) : null
-    };
+    editCamion = { ...camion, FechaDescarga: camion.FechaDescarga ? formatYyyyMmDdFromIso(camion.FechaDescarga) : null };
     state.selectedCamion = camion;
     state.showEditModal = true;
   }
@@ -155,20 +124,15 @@
 
   async function createCamion() {
     if (state.isSubmitting) return;
-    
     try {
       state.isSubmitting = true;
-      // Procesar fecha si existe
-      if (newCamion.FechaDescarga) {
-        newCamion.FechaDescarga = toIsoMidnight(newCamion.FechaDescarga);
-      }
-      
+      if (newCamion.FechaDescarga) newCamion.FechaDescarga = toIsoMidnight(newCamion.FechaDescarga);
       const created = await apiPost<Camion>('/camiones', newCamion);
       state.items = [...state.items, created];
       filterItems();
       state.showCreateModal = false;
     } catch (e: any) {
-      state.error = e?.message || 'Error creando camión';
+      state.error = e?.message || 'Error creando camion';
     } finally {
       state.isSubmitting = false;
     }
@@ -176,27 +140,17 @@
 
   async function updateCamion() {
     if (state.isSubmitting || !state.selectedCamion) return;
-    
     try {
       state.isSubmitting = true;
-      // Procesar fecha si existe
-      if (editCamion.FechaDescarga) {
-        editCamion.FechaDescarga = toIsoMidnight(editCamion.FechaDescarga);
-      }
-      
+      if (editCamion.FechaDescarga) editCamion.FechaDescarga = toIsoMidnight(editCamion.FechaDescarga);
       await apiPut(`/camiones/${state.selectedCamion.id}`, editCamion);
-      
-      // Actualizar la lista local
       const index = state.items.findIndex(item => item.id === state.selectedCamion!.id);
-      if (index >= 0) {
-        state.items[index] = { ...state.items[index], ...editCamion };
-      }
-      
+      if (index >= 0) state.items[index] = { ...state.items[index], ...editCamion };
       filterItems();
       state.showEditModal = false;
       state.selectedCamion = null;
     } catch (e: any) {
-      state.error = e?.message || 'Error actualizando camión';
+      state.error = e?.message || 'Error actualizando camion';
     } finally {
       state.isSubmitting = false;
     }
@@ -204,19 +158,15 @@
 
   async function deleteCamion() {
     if (state.isSubmitting || !state.selectedCamion) return;
-    
     try {
       state.isSubmitting = true;
       await apiDelete(`/camiones/${state.selectedCamion.id}`);
-      
-      // Remover de la lista local
       state.items = state.items.filter(item => item.id !== state.selectedCamion!.id);
-      
       filterItems();
       state.showDeleteModal = false;
       state.selectedCamion = null;
     } catch (e: any) {
-      state.error = e?.message || 'Error eliminando camión';
+      state.error = e?.message || 'Error eliminando camion';
     } finally {
       state.isSubmitting = false;
     }
@@ -235,107 +185,80 @@
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
   });
-  
+
   function checkScreenSize() {
     state.isLargeScreen = window.innerWidth >= 1200;
     state.viewMode = state.isLargeScreen ? 'table' : 'cards';
   }
-  
-  function toggleView() {
-    state.viewMode = state.viewMode === 'cards' ? 'table' : 'cards';
-  }
 </script>
 
 <ProtectedRoute>
-<div class="camiones-container">
-  <div class="camiones-header">
-
+<div class="container">
+  <div class="toolbar">
+    <div class="search-box">
+      <Search size={16} class="search-icon" />
+      <input
+        type="text"
+        placeholder="Buscar por matricula, conductor, DNI..."
+        bind:value={state.searchQuery}
+        on:input={handleSearch}
+        class="search-input"
+      />
+      {#if state.searchQuery}
+        <button class="icon-btn-ghost" on:click={clearSearch}><X size={16} /></button>
+      {/if}
+      <button class="icon-btn" on:click={openBarcodeScanner} title="Escanear"><ScanLine size={18} /></button>
+    </div>
     <button class="btn-primary" on:click={openCreateModal}>
-      + Nuevo Camión
+      <Plus size={16} />
+      <span>Nuevo</span>
     </button>
   </div>
 
-  <!-- Buscador -->
-  <div class="search-container">
-    <div class="search-box">
-      <div class="search-input-wrapper">
-        <input
-          type="text"
-          placeholder="Buscar camiones por matrícula, conductor, DNI, ubicación..."
-          bind:value={state.searchQuery}
-          on:input={handleSearch}
-          class="search-input"
-        />
-        {#if state.searchQuery}
-          <button class="search-clear" on:click={clearSearch} title="Limpiar búsqueda">
-            ×
-          </button>
-        {/if}
-      </div>
-      <button class="barcode-scanner-btn" on:click={openBarcodeScanner} title="Escanear código de barras">
-        📷
-      </button>
+  {#if state.searchQuery && state.filteredItems.length !== state.items.length}
+    <div class="search-results">
+      {state.filteredItems.length} de {state.items.length} camiones
     </div>
-    {#if state.searchQuery && state.filteredItems.length !== state.items.length}
-      <div class="search-results">
-        Mostrando {state.filteredItems.length} de {state.items.length} camiones
-      </div>
-    {/if}
-  </div>
+  {/if}
 
   {#if state.loading}
-    <div class="loading-state">
-      <div class="spinner"></div>
-      <p>Cargando camiones...</p>
-    </div>
-  {:else if state.error}
-    <div class="error-state">
-      <p>❌ {state.error}</p>
+    <div class="empty-state"><div class="spinner"></div><p>Cargando...</p></div>
+  {:else if state.error && state.items.length === 0}
+    <div class="empty-state">
+      <p class="error-text">{state.error}</p>
       <button class="btn-secondary" on:click={load}>Reintentar</button>
     </div>
   {:else if state.items.length === 0}
     <div class="empty-state">
       <h3>No hay camiones registrados</h3>
-      <p>Comienza creando tu primer camión</p>
-      <button class="btn-primary" on:click={openCreateModal}>
-        + Crear Primer Camión
-      </button>
+      <p>Comienza creando tu primer camion</p>
+      <button class="btn-primary" on:click={openCreateModal}><Plus size={16} /> Crear</button>
     </div>
   {:else if state.filteredItems.length === 0 && state.searchQuery}
     <div class="empty-state">
-      <h3>No se encontraron camiones</h3>
+      <h3>Sin resultados</h3>
       <p>No hay camiones que coincidan con "{state.searchQuery}"</p>
-      <button class="btn-secondary" on:click={clearSearch}>
-        Limpiar búsqueda
-      </button>
+      <button class="btn-secondary" on:click={clearSearch}>Limpiar</button>
     </div>
   {:else}
-    <!-- Toggle para vista -->
     {#if state.isLargeScreen}
       <div class="view-toggle">
         <button class="toggle-btn" class:active={state.viewMode === 'cards'} on:click={() => state.viewMode = 'cards'}>
-          📱 Tarjetas
+          <LayoutGrid size={16} /> Tarjetas
         </button>
         <button class="toggle-btn" class:active={state.viewMode === 'table'} on:click={() => state.viewMode = 'table'}>
-          📊 Tabla
+          <Table size={16} /> Tabla
         </button>
       </div>
     {/if}
-    
+
     {#if state.viewMode === 'table' && state.isLargeScreen}
-      <!-- Vista de tabla -->
       <div class="table-container">
         <table class="data-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>DNI</th>
-              <th>Ubicación</th>
-              <th>Container</th>
-              <th>Albarán</th>
-              <th>Fecha Descarga</th>
-              <th>Actualizado</th>
-              <th>Acciones</th>
+              <th>ID</th><th>DNI</th><th>Ubicacion</th><th>Container</th>
+              <th>Albaran</th><th>Fecha</th><th>Actualizado</th><th></th>
             </tr>
           </thead>
           <tbody>
@@ -349,25 +272,21 @@
                 <td>{camion.FechaDescarga ? formatDdMmYyyyFromIso(camion.FechaDescarga) : '-'}</td>
                 <td class="update-cell">
                   {#if camion.updated_at}
-                    <div class="update-info">
-                      <span class="update-date">{formatUpdateDate(camion.updated_at)}</span>
-                      {#if camion.updated_by}
-                        {#await getUserDisplayName(camion.updated_by)}
-                          <span class="update-user">...</span>
-                        {:then email}
-                          <span class="update-user">{email}</span>
-                        {:catch}
-                          <span class="update-user">{camion.updated_by}</span>
-                        {/await}
-                      {/if}
-                    </div>
-                  {:else}
-                    -
-                  {/if}
+                    <span class="update-date">{formatUpdateDate(camion.updated_at)}</span>
+                    {#if camion.updated_by}
+                      {#await getUserDisplayName(camion.updated_by)}
+                        <span class="update-user">...</span>
+                      {:then email}
+                        <span class="update-user">{email}</span>
+                      {:catch}
+                        <span class="update-user">{camion.updated_by}</span>
+                      {/await}
+                    {/if}
+                  {:else}-{/if}
                 </td>
-                <td class="actions-cell">
-                  <button class="btn-delete-table" on:click|stopPropagation={() => openDeleteModal(camion)} title="Eliminar">
-                    🗑️
+                <td>
+                  <button class="btn-delete" on:click|stopPropagation={() => openDeleteModal(camion)} title="Eliminar">
+                    <Trash2 size={14} color="#EF4444" />
                   </button>
                 </td>
               </tr>
@@ -376,981 +295,299 @@
         </table>
       </div>
     {:else}
-      <!-- Vista de tarjetas -->
-      <div class="camiones-grid">
+      <div class="cards-grid">
         {#each state.filteredItems as camion (camion.id)}
-          <div class="camion-card" on:click={() => openEditModal(camion)} role="button" tabindex="0" on:keydown={(e) => { if (e.key === 'Enter') openEditModal(camion); }}>
+          <div class="card" on:click={() => openEditModal(camion)} role="button" tabindex="0" on:keydown={(e) => { if (e.key === 'Enter') openEditModal(camion); }}>
             <div class="card-header">
-              <div class="camion-id">#{camion.id}</div>
-              <div class="card-actions">
-                <button class="btn-delete" on:click|stopPropagation={() => openDeleteModal(camion)} title="Eliminar">
-                  🗑️
-                </button>
-              </div>
+              <span class="card-id">#{camion.id}</span>
+              <button class="btn-delete" on:click|stopPropagation={() => openDeleteModal(camion)} title="Eliminar">
+                <Trash2 size={14} color="#EF4444" />
+              </button>
             </div>
-          
-          <div class="card-content">
-            <div class="main-info">
-              <h3>{camion.Matricula || 'Sin matrícula'}</h3>
-              <p class="conductor">{camion.NombreConductor || 'Sin conductor'}</p>
-            </div>
-            
-            <div class="details-grid">
-              <div class="detail-item">
-                <label>DNI</label>
-                <span>{camion.DNI || '-'}</span>
+            <div class="card-body">
+              <h3>{camion.Matricula || 'Sin matricula'}</h3>
+              <p class="subtitle">{camion.NombreConductor || 'Sin conductor'}</p>
+              <div class="details-grid">
+                <div class="detail"><span class="detail-label">DNI</span><span>{camion.DNI || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Ubicacion</span><span>{camion.UbicacionCampa || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Container</span><span>{camion.Container || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Albaran</span><span>{camion.Albaran || '-'}</span></div>
+                <div class="detail full-width"><span class="detail-label">Fecha Descarga</span><span>{camion.FechaDescarga ? formatDdMmYyyyFromIso(camion.FechaDescarga) : '-'}</span></div>
               </div>
-              <div class="detail-item">
-                <label>Ubicación</label>
-                <span>{camion.UbicacionCampa || '-'}</span>
-              </div>
-              <div class="detail-item">
-                <label>Container</label>
-                <span>{camion.Container || '-'}</span>
-              </div>
-              <div class="detail-item">
-                <label>Albarán</label>
-                <span>{camion.Albaran || '-'}</span>
-              </div>
-              <div class="detail-item full-width">
-                <label>Fecha Descarga</label>
-                <span>{camion.FechaDescarga ? formatDdMmYyyyFromIso(camion.FechaDescarga) : '-'}</span>
-              </div>
-            </div>
-
-            <!-- Información de auditoría -->
-            {#if camion.updated_at || camion.updated_by}
-              <div class="audit-info">
-                <div class="audit-item">
-                  <label>Última actualización</label>
-                  <span class="audit-details">
-                    {#if camion.updated_at}
-                      {formatUpdateDate(camion.updated_at)}
-                    {/if}
-                    {#if camion.updated_by}
-                      {#await getUserDisplayName(camion.updated_by)}
-                        <span class="user-loading">...</span>
-                      {:then email}
-                        <span class="user-name">por {email}</span>
-                      {:catch}
-                        <span class="user-name">por {camion.updated_by}</span>
-                      {/await}
-                    {/if}
-                  </span>
+              {#if camion.updated_at || camion.updated_by}
+                <div class="audit-info">
+                  {#if camion.updated_at}{formatUpdateDate(camion.updated_at)}{/if}
+                  {#if camion.updated_by}
+                    {#await getUserDisplayName(camion.updated_by)}
+                      <span class="audit-user">...</span>
+                    {:then email}
+                      <span class="audit-user">por {email}</span>
+                    {:catch}
+                      <span class="audit-user">por {camion.updated_by}</span>
+                    {/await}
+                  {/if}
                 </div>
-              </div>
-            {/if}
-
-            <!-- Vista previa de fotos (solo lectura) -->
-            <PhotoGallery tableName="camiones" recordId={camion.id} readonly={true} />
+              {/if}
+              <PhotoGallery tableName="camiones" recordId={camion.id} readonly={true} />
+            </div>
           </div>
-        </div>
         {/each}
       </div>
     {/if}
   {/if}
 </div>
 
-<!-- Modal Crear Camión -->
 {#if state.showCreateModal}
   <div class="modal-overlay" on:click={closeModals}>
     <div class="modal" on:click|stopPropagation>
       <div class="modal-header">
-        <h3>Crear Nuevo Camión</h3>
-        <button class="modal-close" on:click={closeModals}>×</button>
+        <h3>Nuevo Camion</h3>
+        <button class="icon-btn-ghost" on:click={closeModals}><X size={20} /></button>
       </div>
-      
       <form class="modal-form" on:submit|preventDefault={createCamion}>
         <div class="form-row">
-          <div class="form-group">
-            <label for="new-matricula">Matrícula *</label>
-            <input id="new-matricula" bind:value={newCamion.Matricula} required>
-          </div>
-          <div class="form-group">
-            <label for="new-dni">DNI</label>
-            <input id="new-dni" bind:value={newCamion.DNI}>
-          </div>
+          <div class="form-group"><label for="new-matricula">Matricula *</label><input id="new-matricula" bind:value={newCamion.Matricula} required></div>
+          <div class="form-group"><label for="new-dni">DNI</label><input id="new-dni" bind:value={newCamion.DNI}></div>
         </div>
-        
-        <div class="form-group">
-          <label for="new-conductor">Nombre Conductor</label>
-          <input id="new-conductor" bind:value={newCamion.NombreConductor}>
-        </div>
-        
+        <div class="form-group"><label for="new-conductor">Conductor</label><input id="new-conductor" bind:value={newCamion.NombreConductor}></div>
         <div class="form-row">
-          <div class="form-group">
-            <label for="new-ubicacion">Ubicación Campa</label>
-            <input id="new-ubicacion" bind:value={newCamion.UbicacionCampa}>
-          </div>
-          <div class="form-group">
-            <label for="new-container">Container</label>
-            <input id="new-container" bind:value={newCamion.Container}>
-          </div>
+          <div class="form-group"><label for="new-ubicacion">Ubicacion</label><input id="new-ubicacion" bind:value={newCamion.UbicacionCampa}></div>
+          <div class="form-group"><label for="new-container">Container</label><input id="new-container" bind:value={newCamion.Container}></div>
         </div>
-        
         <div class="form-row">
-          <div class="form-group">
-            <label for="new-albaran">Albarán</label>
-            <input id="new-albaran" bind:value={newCamion.Albaran}>
-          </div>
-          <div class="form-group">
-            <label for="new-fecha">Fecha Descarga</label>
-            <input id="new-fecha" type="date" bind:value={newCamion.FechaDescarga}>
-          </div>
+          <div class="form-group"><label for="new-albaran">Albaran</label><input id="new-albaran" bind:value={newCamion.Albaran}></div>
+          <div class="form-group"><label for="new-fecha">Fecha Descarga</label><input id="new-fecha" type="date" bind:value={newCamion.FechaDescarga}></div>
         </div>
-        
-        {#if state.error}
-          <div class="form-error">{state.error}</div>
-        {/if}
-        
+        {#if state.error}<div class="form-error">{state.error}</div>{/if}
         <div class="modal-actions">
-          <button type="button" class="btn-secondary" on:click={closeModals}>
-            Cancelar
-          </button>
-          <button type="submit" class="btn-primary" disabled={state.isSubmitting}>
-            {state.isSubmitting ? 'Creando...' : 'Crear Camión'}
-          </button>
+          <button type="button" class="btn-secondary" on:click={closeModals}>Cancelar</button>
+          <button type="submit" class="btn-primary" disabled={state.isSubmitting}>{state.isSubmitting ? 'Creando...' : 'Crear'}</button>
         </div>
       </form>
     </div>
   </div>
 {/if}
 
-<!-- Modal Editar Camión -->
 {#if state.showEditModal}
   <div class="modal-overlay" on:click={closeModals}>
     <div class="modal" on:click|stopPropagation>
       <div class="modal-header">
-        <h3>Editar Camión #{state.selectedCamion?.id}</h3>
-        <button class="modal-close" on:click={closeModals}>×</button>
+        <h3>Editar Camion #{state.selectedCamion?.id}</h3>
+        <button class="icon-btn-ghost" on:click={closeModals}><X size={20} /></button>
       </div>
-      
       <form class="modal-form" on:submit|preventDefault={updateCamion}>
         <div class="form-row">
-          <div class="form-group">
-            <label for="edit-matricula">Matrícula *</label>
-            <input id="edit-matricula" bind:value={editCamion.Matricula} required>
-          </div>
-          <div class="form-group">
-            <label for="edit-dni">DNI</label>
-            <input id="edit-dni" bind:value={editCamion.DNI}>
-          </div>
+          <div class="form-group"><label for="edit-matricula">Matricula *</label><input id="edit-matricula" bind:value={editCamion.Matricula} required></div>
+          <div class="form-group"><label for="edit-dni">DNI</label><input id="edit-dni" bind:value={editCamion.DNI}></div>
         </div>
-        
-        <div class="form-group">
-          <label for="edit-conductor">Nombre Conductor</label>
-          <input id="edit-conductor" bind:value={editCamion.NombreConductor}>
-        </div>
-        
+        <div class="form-group"><label for="edit-conductor">Conductor</label><input id="edit-conductor" bind:value={editCamion.NombreConductor}></div>
         <div class="form-row">
-          <div class="form-group">
-            <label for="edit-ubicacion">Ubicación Campa</label>
-            <input id="edit-ubicacion" bind:value={editCamion.UbicacionCampa}>
-          </div>
-          <div class="form-group">
-            <label for="edit-container">Container</label>
-            <input id="edit-container" bind:value={editCamion.Container}>
-          </div>
+          <div class="form-group"><label for="edit-ubicacion">Ubicacion</label><input id="edit-ubicacion" bind:value={editCamion.UbicacionCampa}></div>
+          <div class="form-group"><label for="edit-container">Container</label><input id="edit-container" bind:value={editCamion.Container}></div>
         </div>
-        
         <div class="form-row">
-          <div class="form-group">
-            <label for="edit-albaran">Albarán</label>
-            <input id="edit-albaran" bind:value={editCamion.Albaran}>
-          </div>
-          <div class="form-group">
-            <label for="edit-fecha">Fecha Descarga</label>
-            <input 
-              id="edit-fecha" 
-              type="date" 
-              bind:value={editCamion.FechaDescarga}
-            >
-          </div>
+          <div class="form-group"><label for="edit-albaran">Albaran</label><input id="edit-albaran" bind:value={editCamion.Albaran}></div>
+          <div class="form-group"><label for="edit-fecha">Fecha Descarga</label><input id="edit-fecha" type="date" bind:value={editCamion.FechaDescarga}></div>
         </div>
-        
-        <!-- Gestión de Fotos -->
         <div class="photos-section">
           <h4>Fotos</h4>
           <div class="photo-controls">
-            <button type="button" class="btn-upload" on:click={() => photoGalleryRef?.triggerGallery()} disabled={photoGalleryRef?.getState()?.uploading}>
-              📁 Galería
+            <button type="button" class="btn-secondary" on:click={() => photoGalleryRef?.triggerGallery()} disabled={photoGalleryRef?.getState()?.uploading}>
+              <FolderOpen size={16} /> Galeria
             </button>
-            <button type="button" class="btn-upload" on:click={() => photoGalleryRef?.triggerCamera()} disabled={photoGalleryRef?.getState()?.uploading}>
-              📷 Cámara
+            <button type="button" class="btn-secondary" on:click={() => photoGalleryRef?.triggerCamera()} disabled={photoGalleryRef?.getState()?.uploading}>
+              <Camera size={16} /> Camara
             </button>
           </div>
           <PhotoGallery bind:this={photoGalleryRef} tableName="camiones" recordId={state.selectedCamion?.id} readonly={false} modalMode={true} />
         </div>
-        
-        {#if state.error}
-          <div class="form-error">{state.error}</div>
-        {/if}
-        
+        {#if state.error}<div class="form-error">{state.error}</div>{/if}
         <div class="modal-actions">
-          <button type="button" class="btn-secondary" on:click={closeModals}>
-            Cancelar
-          </button>
-          <button type="submit" class="btn-primary" disabled={state.isSubmitting}>
-            {state.isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
-          </button>
+          <button type="button" class="btn-secondary" on:click={closeModals}>Cancelar</button>
+          <button type="submit" class="btn-primary" disabled={state.isSubmitting}>{state.isSubmitting ? 'Guardando...' : 'Guardar'}</button>
         </div>
       </form>
     </div>
   </div>
 {/if}
 
-<!-- Modal Eliminar Camión -->
 {#if state.showDeleteModal}
   <div class="modal-overlay" on:click={closeModals}>
     <div class="modal modal-small" on:click|stopPropagation>
       <div class="modal-header">
-        <h3>Confirmar Eliminación</h3>
-        <button class="modal-close" on:click={closeModals}>×</button>
+        <h3>Eliminar camion</h3>
+        <button class="icon-btn-ghost" on:click={closeModals}><X size={20} /></button>
       </div>
-      
-      <div class="modal-content">
-        <p>¿Estás seguro de que quieres eliminar el camión <strong>#{state.selectedCamion?.id}</strong>?</p>
-        <p class="warning-text">Esta acción no se puede deshacer.</p>
-        
-        {#if state.error}
-          <div class="form-error">{state.error}</div>
-        {/if}
+      <div class="modal-body">
+        <p>Eliminar camion <strong>#{state.selectedCamion?.id}</strong>?</p>
+        <p class="warning-text">Esta accion no se puede deshacer.</p>
+        {#if state.error}<div class="form-error">{state.error}</div>{/if}
       </div>
-      
       <div class="modal-actions">
-        <button type="button" class="btn-secondary" on:click={closeModals}>
-          Cancelar
-        </button>
-        <button class="btn-danger" on:click={deleteCamion} disabled={state.isSubmitting}>
-          {state.isSubmitting ? 'Eliminando...' : 'Eliminar'}
-        </button>
+        <button type="button" class="btn-secondary" on:click={closeModals}>Cancelar</button>
+        <button class="btn-danger" on:click={deleteCamion} disabled={state.isSubmitting}>{state.isSubmitting ? 'Eliminando...' : 'Eliminar'}</button>
       </div>
     </div>
   </div>
 {/if}
 
-<!-- Escáner de códigos de barras -->
-<BarcodeScanner
-  isOpen={state.showBarcodeScanner}
-  on:scan={handleBarcodeScan}
-  on:close={closeBarcodeScanner}
-/>
+<BarcodeScanner isOpen={state.showBarcodeScanner} on:scan={handleBarcodeScan} on:close={closeBarcodeScanner} />
 </ProtectedRoute>
 
 <style>
-  .camiones-container {
-    max-width: 1600px;
-    margin: 0 auto;
-    padding: 32px;
-  }
-  
-  @media (min-width: 1400px) {
-    .camiones-container {
-      padding: 40px;
-    }
-  }
-  
-  @media (max-width: 768px) {
-    .camiones-container {
-      padding: 12px;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .camiones-container {
-      padding: 8px;
-    }
-  }
+  .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
 
-  /* Search Styles */
-  .search-container {
-    margin-bottom: 24px;
+  .toolbar {
+    display: flex; gap: 12px; align-items: center; margin-bottom: 20px;
   }
-
   .search-box {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    max-width: 600px;
-    margin: 0 auto;
+    flex: 1; display: flex; align-items: center; gap: 8px;
+    background: white; border: 1px solid #E5E7EB; border-radius: 10px; padding: 4px 12px;
   }
-
-  .search-input-wrapper {
-    position: relative;
-    flex: 1;
-  }
-
+  .search-box :global(.search-icon) { color: #9CA3AF; flex-shrink: 0; }
   .search-input {
-    width: 100%;
-    padding: 12px 16px;
-    padding-right: 40px;
-    border: 2px solid #E5E7EB;
-    border-radius: 8px;
-    font-size: 16px;
-    transition: border-color 0.2s ease;
-    box-sizing: border-box;
+    flex: 1; border: none; outline: none; font-size: 14px; padding: 10px 4px; background: transparent; min-width: 0;
   }
+  .search-results { text-align: center; font-size: 13px; color: #6B7280; margin-bottom: 16px; }
 
-  .search-input:focus {
-    outline: none;
-    border-color: #3B82F6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  .icon-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: 10px; border: 1px solid #E5E7EB;
+    background: white; color: #374151; cursor: pointer; transition: all 0.2s; flex-shrink: 0;
   }
+  .icon-btn:hover { background: #F3F4F6; }
 
-  .search-clear {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    font-size: 20px;
-    color: #6B7280;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
+  .icon-btn-ghost {
+    display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 8px; border: none;
+    background: transparent; color: #6B7280; cursor: pointer; transition: all 0.2s;
   }
+  .icon-btn-ghost:hover { background: #F3F4F6; }
 
-  .search-clear:hover {
-    background: #F3F4F6;
-    color: #374151;
+  .btn-delete {
+    display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 8px;
+    border: 1px solid #E5E7EB; background: #FEF2F2;
+    color: #EF4444; cursor: pointer; transition: all 0.2s;
   }
-
-  .barcode-scanner-btn {
-    font-size: 20px;
-    color: #6B7280;
-    padding: 12px;
-    background: #F0FDF4;
-    border: 2px solid #DCFCE7;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .barcode-scanner-btn:hover {
-    background: #10B981;
-    color: white;
-    border-color: #10B981;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
-  }
-
-  .search-results {
-    text-align: center;
-    margin-top: 12px;
-    font-size: 14px;
-    color: #6B7280;
-    padding: 8px 16px;
-    background: #F0F9FF;
-    border: 1px solid #BAE6FD;
-    border-radius: 6px;
-    max-width: 600px;
-    margin: 12px auto 0;
-  }
-  
-  .camiones-header {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 32px;
-    padding-bottom: 20px;
-    border-bottom: 2px solid #E5E7EB;
-  }
-  
+  .btn-delete:hover { background: #FEE2E2; border-color: #FECACA; color: #DC2626; }
 
   .btn-primary {
-    background: linear-gradient(135deg, #3B82F6, #1D4ED8);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 14px;
+    display: flex; align-items: center; gap: 6px;
+    background: #1F2937; color: white; border: none; padding: 10px 18px;
+    border-radius: 10px; font-weight: 500; font-size: 14px; cursor: pointer;
+    transition: all 0.2s; white-space: nowrap;
   }
-  
-  .btn-primary:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
-  }
-  
-  .btn-primary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-  
+  .btn-primary:hover:not(:disabled) { background: #111827; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
   .btn-secondary {
-    background: #F3F4F6;
-    color: #374151;
-    border: 1px solid #D1D5DB;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 14px;
+    display: flex; align-items: center; gap: 6px;
+    background: white; color: #374151; border: 1px solid #D1D5DB;
+    padding: 8px 16px; border-radius: 8px; font-weight: 500; font-size: 14px;
+    cursor: pointer; transition: all 0.2s;
   }
-  
-  .btn-secondary:hover {
-    background: #E5E7EB;
-  }
-  
+  .btn-secondary:hover { background: #F3F4F6; }
+
   .btn-danger {
-    background: linear-gradient(135deg, #EF4444, #DC2626);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 14px;
+    background: #DC2626; color: white; border: none; padding: 10px 20px;
+    border-radius: 8px; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s;
   }
-  
-  .btn-danger:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
-  }
-  
-  .loading-state, .error-state, .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-  }
-  
+  .btn-danger:hover:not(:disabled) { background: #B91C1C; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: #6B7280; }
+  .empty-state h3 { color: #374151; font-size: 16px; margin: 0 0 8px; }
+  .empty-state p { margin: 0 0 16px; font-size: 14px; }
+  .error-text { color: #DC2626; }
+
   .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #E5E7EB;
-    border-top: 4px solid #3B82F6;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 20px;
+    width: 32px; height: 32px; border: 3px solid #E5E7EB; border-top: 3px solid #3B82F6;
+    border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;
   }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
-  /* Vista toggle */
-  .view-toggle {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
-    justify-content: center;
-  }
-  
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+  .view-toggle { display: flex; gap: 4px; margin-bottom: 16px; background: #F3F4F6; border-radius: 10px; padding: 4px; width: fit-content; }
   .toggle-btn {
-    padding: 10px 20px;
-    border: 2px solid #E5E7EB;
-    border-radius: 8px;
-    background: white;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-weight: 500;
+    display: flex; align-items: center; gap: 6px; padding: 8px 16px; border: none;
+    border-radius: 8px; background: transparent; font-size: 13px; font-weight: 500;
+    color: #6B7280; cursor: pointer; transition: all 0.2s;
   }
-  
-  .toggle-btn:hover {
-    border-color: #3B82F6;
+  .toggle-btn.active { background: white; color: #1F2937; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+  /* Table */
+  .table-container { background: white; border-radius: 12px; border: 1px solid #E5E7EB; overflow: hidden; }
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th { background: #F9FAFB; padding: 12px; text-align: left; font-weight: 500; color: #6B7280; font-size: 13px; border-bottom: 1px solid #E5E7EB; }
+  .data-table td { padding: 12px; border-bottom: 1px solid #F3F4F6; font-size: 14px; color: #374151; }
+  .table-row { cursor: pointer; transition: background 0.15s; }
+  .table-row:hover { background: #F9FAFB; }
+  .id-cell { font-weight: 600; color: #3B82F6; }
+  .update-cell { min-width: 160px; }
+  .update-date { font-size: 13px; color: #374151; }
+  .update-user { font-size: 12px; color: #9CA3AF; display: block; }
+
+  /* Cards */
+  .cards-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .card {
+    background: white; border: 1px solid #E5E7EB; border-radius: 12px;
+    cursor: pointer; transition: all 0.2s;
   }
-  
-  .toggle-btn.active {
-    background: #3B82F6;
-    color: white;
-    border-color: #3B82F6;
-  }
-  
-  /* Vista de tabla */
-  .table-container {
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    border: 1px solid #E5E7EB;
-  }
-  
-  .data-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  
-  .data-table th {
-    background: #F9FAFB;
-    padding: 16px 12px;
-    text-align: left;
-    font-weight: 600;
-    color: #374151;
-    border-bottom: 2px solid #E5E7EB;
-    font-size: 14px;
-  }
-  
-  .data-table td {
-    padding: 16px 12px;
-    border-bottom: 1px solid #F3F4F6;
-    font-size: 14px;
-  }
-  
-  .table-row {
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .table-row:hover {
-    background: #F9FAFB;
-  }
-  
-  .id-cell {
-    font-weight: 600;
-    color: #3B82F6;
-  }
-  
-  .update-cell {
-    min-width: 180px;
-  }
-  
-  .update-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  
-  .update-date {
-    font-weight: 500;
-    color: #374151;
-  }
-  
-  .update-user {
-    font-size: 12px;
-    color: #6B7280;
-  }
-  
-  .actions-cell {
-    width: 80px;
-    text-align: center;
-  }
-  
-  .btn-delete-table {
-    background: none;
-    border: none;
-    padding: 8px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 16px;
-  }
-  
-  .btn-delete-table:hover {
-    background: #FEE2E2;
-  }
-  
-  .camiones-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-    gap: 24px;
-  }
-  
-  @media (min-width: 1200px) {
-    .camiones-grid {
-      grid-template-columns: repeat(auto-fill, minmax(750px, 1fr));
-      gap: 28px;
-    }
-  }
-  
-  @media (min-width: 1600px) {
-    .camiones-grid {
-      grid-template-columns: repeat(auto-fill, minmax(900px, 1fr));
-      gap: 32px;
-    }
-  }
-  
-  .camion-card {
-    background: white;
-    border: 1px solid #E5E7EB;
-    border-radius: 12px;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-  }
-  
-  .camion-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    border-color: #3B82F6;
-  }
-  
+  .card:hover { border-color: #D1D5DB; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .card:active { transform: scale(0.99); }
   .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 20px;
-    background: #F8FAFC;
-    border-bottom: 1px solid #E2E8F0;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px; border-bottom: 1px solid #F3F4F6;
   }
-  
-  .camion-id {
-    font-weight: 600;
-    color: #64748B;
-    font-size: 14px;
-  }
-  
-  .card-actions {
-    display: flex;
-    gap: 8px;
-  }
-  
-  .btn-delete {
-    background: none;
-    border: none;
-    padding: 8px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 16px;
-  }
-  
-  .btn-delete:hover {
-    background: #FEE2E2;
-  }
-  
-  .card-content {
-    padding: 20px;
-  }
-  
-  @media (min-width: 1200px) {
-    .card-content {
-      padding: 16px;
-    }
-  }
-  
-  .main-info {
-    margin-bottom: 20px;
-  }
-  
-  @media (min-width: 1200px) {
-    .main-info {
-      margin-bottom: 16px;
-    }
-  }
-  
-  .main-info h3 {
-    font-size: 20px;
-    font-weight: 600;
-    color: #1F2937;
-    margin: 0 0 4px 0;
-  }
-  
-  .conductor {
-    color: #6B7280;
-    font-size: 14px;
-    margin: 0;
-  }
-  
-  .details-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-  
-  @media (min-width: 1200px) {
-    .details-grid {
-      grid-template-columns: repeat(4, 1fr);
-      gap: 20px;
-    }
-  }
-  
-  @media (min-width: 1600px) {
-    .details-grid {
-      grid-template-columns: repeat(5, 1fr);
-      gap: 24px;
-    }
-  }
-  
-  .detail-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    text-align: center;
-  }
-  
-  @media (min-width: 1200px) {
-    .detail-item {
-      gap: 2px;
-    }
-  }
-  
-  .detail-item.full-width {
-    grid-column: span 2;
-  }
-  
-  @media (min-width: 1200px) {
-    .detail-item.full-width {
-      grid-column: span 2;
-    }
-  }
-  
-  @media (min-width: 1600px) {
-    .detail-item.full-width {
-      grid-column: span 3;
-    }
-  }
-  
-  .detail-item label {
-    font-size: 12px;
-    font-weight: 600;
-    color: #6B7280;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  
-  .detail-item span {
-    font-size: 14px;
-    color: #1F2937;
-    font-weight: 500;
-  }
-  
-  .audit-info {
-    margin-top: 16px;
-    padding-top: 12px;
-    border-top: 1px solid #E5E7EB;
-  }
-  
-  .audit-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  
-  .audit-item label {
-    font-size: 11px;
-    font-weight: 600;
-    color: #6B7280;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  
-  .audit-details {
-    font-size: 12px;
-    color: #374151;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  
-  .user-name {
-    font-style: italic;
-    color: #6B7280;
-  }
-  
-  .user-loading {
-    color: #9CA3AF;
-    font-style: italic;
-  }
-  
-  /* Modal Styles */
+  .card-id { font-weight: 600; color: #9CA3AF; font-size: 13px; }
+  .card-body { padding: 16px; }
+  .card-body h3 { font-size: 17px; font-weight: 600; color: #1F2937; margin: 0 0 2px; }
+  .subtitle { color: #6B7280; font-size: 14px; margin: 0 0 16px; }
+  .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .detail { display: flex; flex-direction: column; gap: 2px; }
+  .detail-label { font-size: 11px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.5px; }
+  .detail span:last-child { font-size: 14px; color: #374151; }
+  .detail.full-width { grid-column: span 2; }
+  .audit-info { margin-top: 12px; padding-top: 12px; border-top: 1px solid #F3F4F6; font-size: 12px; color: #9CA3AF; }
+  .audit-user { color: #9CA3AF; }
+
+  /* Modal */
   .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 20px;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4); display: flex; align-items: center;
+    justify-content: center; z-index: 1000; padding: 20px;
   }
-  
   .modal {
-    background: white;
-    border-radius: 12px;
-    width: 100%;
-    max-width: 600px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    background: white; border-radius: 16px; width: 100%; max-width: 560px;
+    max-height: 90vh; overflow-y: auto;
   }
-  
-  .modal-small {
-    max-width: 400px;
-  }
-  
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 24px 24px 0;
-    margin-bottom: 20px;
-  }
-  
-  .modal-header h3 {
-    font-size: 20px;
-    font-weight: 600;
-    color: #1F2937;
-    margin: 0;
-  }
-  
-  .modal-close {
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: #6B7280;
-    padding: 4px;
-    border-radius: 4px;
-  }
-  
-  .modal-close:hover {
-    background: #F3F4F6;
-  }
-  
-  .modal-form {
-    padding: 0 24px;
-  }
-  
-  .modal-content {
-    padding: 0 24px;
-  }
-  
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-  
-  .form-group {
-    margin-bottom: 20px;
-  }
-  
-  .form-group label {
-    display: block;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 6px;
-    font-size: 14px;
-  }
-  
+  .modal-small { max-width: 380px; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 20px 0; }
+  .modal-header h3 { font-size: 18px; font-weight: 600; color: #1F2937; margin: 0; }
+  .modal-form { padding: 20px; }
+  .modal-body { padding: 0 20px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-weight: 500; color: #374151; margin-bottom: 6px; font-size: 14px; }
   .form-group input {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #D1D5DB;
-    border-radius: 6px;
-    font-size: 14px;
-    transition: border-color 0.2s ease;
-    box-sizing: border-box;
+    width: 100%; padding: 10px 12px; border: 1px solid #D1D5DB; border-radius: 8px;
+    font-size: 14px; transition: border-color 0.2s; box-sizing: border-box;
   }
-  
-  .form-group input:focus {
-    outline: none;
-    border-color: #3B82F6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  .form-group input:focus { outline: none; border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+  .form-error { background: #FEF2F2; color: #DC2626; padding: 10px 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+  .warning-text { color: #DC2626; font-size: 14px; margin: 4px 0 0; }
+  .photos-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid #E5E7EB; }
+  .photos-section h4 { margin: 0 0 12px; font-size: 15px; font-weight: 600; color: #374151; }
+  .photo-controls { display: flex; gap: 8px; margin-bottom: 12px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 16px 20px 20px; border-top: 1px solid #F3F4F6; margin-top: 16px; }
+
+  @media (min-width: 768px) {
+    .cards-grid { grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 16px; }
   }
-  
-  .form-error {
-    background: #FEE2E2;
-    color: #DC2626;
-    padding: 12px;
-    border-radius: 6px;
-    margin-bottom: 20px;
-    font-size: 14px;
-  }
-  
-  .warning-text {
-    color: #DC2626;
-    font-size: 14px;
-    margin: 8px 0 0 0;
-  }
-  
-  .photos-section {
-    margin-top: 24px;
-    padding-top: 20px;
-    border-top: 1px solid #E5E7EB;
-  }
-  
-  .photos-section h4 {
-    margin: 0 0 12px 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: #374151;
-  }
-  
-  .photo-controls {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-  }
-  
-  .btn-upload {
-    background: #F3F4F6;
-    color: #374151;
-    border: 1px solid #D1D5DB;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  
-  .btn-upload:hover:not(:disabled) {
-    background: #E5E7EB;
-    transform: translateY(-1px);
-  }
-  
-  .btn-upload:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-  
-  .modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    padding: 20px 24px 24px;
-    border-top: 1px solid #E5E7EB;
-    margin-top: 20px;
-  }
-  
-  @media (max-width: 768px) {
-    .camiones-header {
-      flex-direction: column;
-      gap: 16px;
-      align-items: center;
-    }
-    
-    .camiones-grid {
-      grid-template-columns: 1fr;
-      gap: 16px;
-    }
-    
-    .form-row {
-      grid-template-columns: 1fr;
-      gap: 0;
-    }
-    
-    .modal {
-      margin: 20px;
-      max-height: calc(100vh - 40px);
-    }
-    
-    .details-grid {
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-    
-    .detail-item.full-width {
-      grid-column: span 1;
-    }
+  @media (max-width: 480px) {
+    .container { padding: 12px; }
+    .toolbar { flex-direction: column; }
+    .btn-primary { width: 100%; justify-content: center; }
+    .form-row { grid-template-columns: 1fr; gap: 0; }
+    .modal { margin: 10px; max-height: calc(100vh - 20px); }
   }
 </style>

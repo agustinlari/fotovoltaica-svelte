@@ -4,14 +4,14 @@ function getApiBase(): string {
   if (import.meta.env.VITE_API_BASE) {
     return import.meta.env.VITE_API_BASE;
   }
-  
-  // Si estamos en producción (usando HTTPS), usar la URL de producción
-  if (window.location.protocol === 'https:' && window.location.hostname === 'aplicacionesosmos.com') {
-    return `${window.location.protocol}//${window.location.host}/api/fotovoltaica`;
+
+  // Desarrollo local
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:8787';
   }
-  
-  // Fallback para desarrollo local
-  return 'http://localhost:8787';
+
+  // Producción: usar URL relativa al host actual
+  return `${window.location.protocol}//${window.location.host}/api/fotovoltaica`;
 }
 
 const API_BASE = getApiBase();
