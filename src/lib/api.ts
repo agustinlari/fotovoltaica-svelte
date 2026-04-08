@@ -231,6 +231,25 @@ export type Pallet = {
   updated_by?: string | null;
 };
 
+export type Articulo = {
+  id: number;
+  reference: string;
+  description?: string | null;
+};
+
+export type EstructuraPendiente = {
+  id: number;
+  estructura_id: number;
+  articulo_id: number;
+  cantidad: number;
+  entregado: boolean;
+  entregado_at?: string | null;
+  created_at: string;
+  created_by?: string | null;
+  reference: string;
+  description?: string | null;
+};
+
 export type Usuario = {
   id: number;
   keycloak_id: string;

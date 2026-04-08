@@ -6,6 +6,7 @@
   import ProtectedRoute from './ProtectedRoute.svelte';
   import PhotoGallery from './PhotoGallery.svelte';
   import BarcodeScanner from './BarcodeScanner.svelte';
+  import PendientesEntrega from './PendientesEntrega.svelte';
   import { Plus, Search, X, ScanLine, Trash2, LayoutGrid, Table, FolderOpen, Camera } from 'lucide-svelte';
 
   // Estado para almacenar emails de usuarios
@@ -463,6 +464,11 @@
           </div>
           <PhotoGallery bind:this={photoGalleryRef} tableName="estructura" recordId={state.selectedEstructura?.id} readonly={false} modalMode={true} />
         </div>
+        {#if state.selectedEstructura}
+          <div class="pendientes-section">
+            <PendientesEntrega estructuraId={state.selectedEstructura.id} />
+          </div>
+        {/if}
         {#if state.error}<div class="form-error">{state.error}</div>{/if}
         <div class="modal-actions">
           <button type="button" class="btn-secondary" on:click={closeModals}>Cancelar</button>
@@ -640,6 +646,7 @@
   .warning-text { color: #DC2626; font-size: 14px; margin: 4px 0 0; }
   .photos-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid #E5E7EB; }
   .photos-section h4 { margin: 0 0 12px; font-size: 15px; font-weight: 600; color: #374151; }
+  .pendientes-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid #E5E7EB; }
   .photo-controls { display: flex; gap: 8px; margin-bottom: 12px; }
   .modal-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 16px 20px 20px; border-top: 1px solid #F3F4F6; margin-top: 16px; }
 
