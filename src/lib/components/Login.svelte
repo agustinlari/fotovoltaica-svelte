@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { authStore } from '../stores/auth';
-  import { Sun } from 'lucide-svelte';
+  import { Sun, Eye, EyeOff, AlertCircle } from 'lucide-svelte';
 
   const dispatch = createEventDispatcher();
 
@@ -19,6 +19,21 @@
   let password = '';
   let isLoading = false;
   let error = '';
+  let showPassword = false;
+
+  function translateError(err: any): string {
+    const msg = (err?.message || '').toLowerCase();
+    if (msg.includes('invalid user credentials') || msg.includes('credenciales invalid')) {
+      return 'Usuario o contrasena incorrectos. Comprueba que los datos sean correctos.';
+    }
+    if (msg.includes('failed to fetch') || msg.includes('network') || msg.includes('load failed')) {
+      return 'No se ha podido conectar con el servidor. Comprueba tu conexion a internet.';
+    }
+    if (msg.includes('account is not fully set up') || msg.includes('account disabled')) {
+      return 'Tu cuenta no esta activada. Contacta con el administrador.';
+    }
+    return err?.message || 'Error de autenticacion. Intentalo de nuevo.';
+  }
 
   async function handleLogin() {
     if (!username || !password) {
@@ -33,11 +48,15 @@
       await authStore.login(username, password);
       dispatch('loginSuccess');
     } catch (err: any) {
-      error = err.message || 'Error de autenticacion';
+      error = translateError(err);
       console.error('Login error:', err);
     } finally {
       isLoading = false;
     }
+  }
+
+  function togglePasswordVisibility() {
+    showPassword = !showPassword;
   }
 
   function handleKeyPress(event: KeyboardEvent) {
@@ -73,20 +92,49 @@
 
       <div class="form-group">
         <label for="password">Contrasena</label>
-        <input
-          id="password"
-          type="password"
-          bind:value={password}
-          on:keypress={handleKeyPress}
-          placeholder="Tu contrasena"
-          autocomplete="current-password"
-          disabled={isLoading}
-        />
+        <div class="password-wrapper">
+          {#if showPassword}
+            <input
+              id="password"
+              type="text"
+              bind:value={password}
+              on:keypress={handleKeyPress}
+              placeholder="Tu contrasena"
+              autocomplete="current-password"
+              disabled={isLoading}
+            />
+          {:else}
+            <input
+              id="password"
+              type="password"
+              bind:value={password}
+              on:keypress={handleKeyPress}
+              placeholder="Tu contrasena"
+              autocomplete="current-password"
+              disabled={isLoading}
+            />
+          {/if}
+          <button
+            type="button"
+            class="password-toggle"
+            on:click={togglePasswordVisibility}
+            disabled={isLoading}
+            title={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+            aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+          >
+            {#if showPassword}
+              <EyeOff size={18} />
+            {:else}
+              <Eye size={18} />
+            {/if}
+          </button>
+        </div>
       </div>
 
       {#if error}
-        <div class="error-message">
-          {error}
+        <div class="error-message" role="alert">
+          <AlertCircle size={18} />
+          <span>{error}</span>
         </div>
       {/if}
 
@@ -203,6 +251,45 @@
     cursor: not-allowed;
   }
 
+  .password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .password-wrapper input {
+    width: 100%;
+    padding-right: 44px;
+  }
+
+  .password-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    color: #6B7280;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+
+  .password-toggle:hover:not(:disabled) {
+    background: #F3F4F6;
+    color: #1F2937;
+  }
+
+  .password-toggle:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   .error-message {
     background-color: #FEF2F2;
     color: #DC2626;
@@ -210,7 +297,16 @@
     border-radius: 10px;
     border: 1px solid #FECACA;
     font-size: 14px;
-    text-align: center;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    text-align: left;
+    line-height: 1.4;
+  }
+
+  .error-message :global(svg) {
+    flex-shrink: 0;
+    margin-top: 1px;
   }
 
   .login-button {

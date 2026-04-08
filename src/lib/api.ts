@@ -56,10 +56,9 @@ export async function apiGet<T>(path: string): Promise<T> {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE}${path}`, { 
+  const res = await fetch(`${API_BASE}${path}`, {
     headers,
-    credentials: 'include',
-    mode: 'cors' 
+    mode: 'cors',
   });
   
   if (res.status === 401) {
@@ -76,7 +75,6 @@ export async function apiPut<T>(path: string, body: unknown): Promise<T> {
     method: 'PUT',
     headers: getAuthHeaders(),
     body: JSON.stringify(body),
-    credentials: 'include',
     mode: 'cors',
   });
   
@@ -94,7 +92,6 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(body),
-    credentials: 'include',
     mode: 'cors',
   });
   
@@ -111,7 +108,6 @@ export async function apiDelete<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
-    credentials: 'include',
     mode: 'cors',
   });
   
@@ -155,7 +151,6 @@ export async function login(username: string, password: string): Promise<AuthRes
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ username, password }),
-    credentials: 'include',
     mode: 'cors',
   });
 
@@ -172,7 +167,6 @@ export async function logout(): Promise<void> {
     await fetch(`${API_BASE}/auth/keycloak/logout`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      credentials: 'include',
       mode: 'cors',
     });
   } catch (error) {
@@ -193,7 +187,6 @@ export async function refreshToken(refreshToken: string): Promise<AuthResponse> 
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ refresh_token: refreshToken }),
-    credentials: 'include',
     mode: 'cors',
   });
 

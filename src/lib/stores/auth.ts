@@ -76,44 +76,43 @@ function createAuthStore() {
     },
 
     async login(username: string, password: string) {
-      update(state => ({ ...state, isLoading: true, error: null }));
-      
+      // No tocar isLoading global aqui (lo gestiona el componente Login localmente).
+      // Si lo hicieramos, App.svelte mostraria el spinner global y desmontaria el
+      // componente Login, perdiendo el mensaje de error al re-montarse.
+      update(state => ({ ...state, error: null }));
+
       try {
         const response: AuthResponse = await apiLogin(username, password);
-        
-        // Guardar token
+
         setAuthToken(response.access_token);
-        
-        // Guardar refresh token en localStorage
+
         if (response.refresh_token) {
           localStorage.setItem('refresh_token', response.refresh_token);
         }
-        
+
         update(state => ({
           ...state,
           isAuthenticated: true,
           user: response.user,
           token: response.access_token,
           refreshToken: response.refresh_token,
-          isLoading: false,
           error: null
         }));
-        
+
         console.log('Login exitoso para usuario:', response.user.email);
-        
+
       } catch (error: any) {
         console.error('Error en login:', error);
-        
+
         update(state => ({
           ...state,
           isAuthenticated: false,
           user: null,
           token: null,
           refreshToken: null,
-          isLoading: false,
           error: error.message || 'Error de autenticación'
         }));
-        
+
         throw error;
       }
     },
