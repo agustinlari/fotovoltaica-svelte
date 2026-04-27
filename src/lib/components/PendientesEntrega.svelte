@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { apiGet, apiPost, apiPut, apiDelete, type Articulo, type EstructuraPendiente } from '../api';
-  import { Plus, Trash2, Check, X, Search } from 'lucide-svelte';
+  import { Plus, Trash2, Check, X, Search, ChevronRight } from 'lucide-svelte';
 
   export let estructuraId: number;
 
@@ -11,18 +11,22 @@
   let error: string | null = null;
 
   let showAddForm = false;
-  let searchQuery = '';
   let cantidad = 1;
   let selectedArticulo: Articulo | null = null;
   let isSubmitting = false;
 
-  $: filteredArticulos = searchQuery.trim()
+  // Modal picker state
+  let showPicker = false;
+  let pickerSearch = '';
+  let pickerSearchInput: HTMLInputElement | null = null;
+
+  $: pickerFilteredArticulos = pickerSearch.trim()
     ? articulos.filter(a => {
-        const q = searchQuery.toLowerCase();
+        const q = pickerSearch.toLowerCase();
         return a.reference.toLowerCase().includes(q) ||
                (a.description || '').toLowerCase().includes(q);
-      }).slice(0, 8)
-    : [];
+      })
+    : articulos;
 
   async function load() {
     try {
@@ -43,7 +47,6 @@
 
   function openAddForm() {
     showAddForm = true;
-    searchQuery = '';
     cantidad = 1;
     selectedArticulo = null;
   }
@@ -51,12 +54,22 @@
   function closeAddForm() {
     showAddForm = false;
     selectedArticulo = null;
-    searchQuery = '';
   }
 
-  function selectArticulo(a: Articulo) {
+  async function openPicker() {
+    pickerSearch = '';
+    showPicker = true;
+    await tick();
+    pickerSearchInput?.focus();
+  }
+
+  function closePicker() {
+    showPicker = false;
+  }
+
+  function pickArticulo(a: Articulo) {
     selectedArticulo = a;
-    searchQuery = `${a.reference}${a.description ? ' - ' + a.description : ''}`;
+    showPicker = false;
   }
 
   async function addPendiente() {
@@ -117,35 +130,24 @@
 
   {#if showAddForm}
     <div class="add-form">
-      <div class="search-wrapper">
-        <Search size={14} color="#9CA3AF" />
-        <input
-          type="text"
-          placeholder="Buscar referencia o descripcion..."
-          bind:value={searchQuery}
-          on:input={() => { selectedArticulo = null; }}
-          class="search-input"
-        />
-      </div>
-
-      {#if searchQuery && !selectedArticulo}
-        {#if filteredArticulos.length > 0}
-          <ul class="suggestions">
-            {#each filteredArticulos as a (a.id)}
-              <li>
-                <button type="button" on:click={() => selectArticulo(a)}>
-                  <span class="ref">{a.reference}</span>
-                  {#if a.description}
-                    <span class="desc">{a.description}</span>
-                  {/if}
-                </button>
-              </li>
-            {/each}
-          </ul>
+      <button
+        type="button"
+        class="picker-trigger"
+        class:has-value={selectedArticulo !== null}
+        on:click={openPicker}
+      >
+        {#if selectedArticulo}
+          <div class="picker-trigger-content">
+            <span class="picker-ref">{selectedArticulo.reference}</span>
+            {#if selectedArticulo.description}
+              <span class="picker-desc">{selectedArticulo.description}</span>
+            {/if}
+          </div>
         {:else}
-          <div class="no-results">Sin coincidencias</div>
+          <span class="picker-placeholder">Seleccionar articulo</span>
         {/if}
-      {/if}
+        <ChevronRight size={16} color="#9CA3AF" />
+      </button>
 
       <div class="form-row">
         <label>
@@ -207,6 +209,60 @@
   {/if}
 </div>
 
+{#if showPicker}
+  <div class="picker-overlay" on:click={closePicker} role="dialog" aria-modal="true">
+    <div class="picker-modal" on:click|stopPropagation>
+      <div class="picker-header">
+        <button type="button" class="picker-close" on:click={closePicker} title="Cerrar">
+          <X size={20} />
+        </button>
+        <h3>Seleccionar articulo</h3>
+        <div class="picker-spacer"></div>
+      </div>
+
+      <div class="picker-search">
+        <Search size={16} color="#9CA3AF" />
+        <input
+          bind:this={pickerSearchInput}
+          type="text"
+          placeholder="Buscar referencia o descripcion..."
+          bind:value={pickerSearch}
+          class="picker-search-input"
+        />
+        {#if pickerSearch}
+          <button type="button" class="picker-search-clear" on:click={() => { pickerSearch = ''; }}>
+            <X size={14} />
+          </button>
+        {/if}
+      </div>
+
+      <div class="picker-meta">
+        {pickerFilteredArticulos.length} de {articulos.length} articulos
+      </div>
+
+      <ul class="picker-list">
+        {#if pickerFilteredArticulos.length === 0}
+          <li class="picker-empty">Sin coincidencias</li>
+        {:else}
+          {#each pickerFilteredArticulos as a (a.id)}
+            <li>
+              <button type="button" class="picker-item" on:click={() => pickArticulo(a)}>
+                <div class="picker-item-content">
+                  <span class="picker-item-ref">{a.reference}</span>
+                  {#if a.description}
+                    <span class="picker-item-desc">{a.description}</span>
+                  {/if}
+                </div>
+                <ChevronRight size={16} color="#9CA3AF" />
+              </button>
+            </li>
+          {/each}
+        {/if}
+      </ul>
+    </div>
+  </div>
+{/if}
+
 <style>
   .pendientes { margin-top: 16px; }
 
@@ -236,37 +292,21 @@
     padding: 12px; margin-bottom: 12px;
   }
 
-  .search-wrapper {
-    display: flex; align-items: center; gap: 8px;
-    background: white; border: 1px solid #D1D5DB; border-radius: 8px;
-    padding: 8px 10px;
+  .picker-trigger {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    width: 100%; background: white; border: 1px solid #D1D5DB;
+    border-radius: 8px; padding: 10px 12px; cursor: pointer;
+    text-align: left; transition: all 0.2s;
   }
-  .search-input {
-    flex: 1; border: none; outline: none; font-size: 14px;
-    background: transparent; min-width: 0;
+  .picker-trigger:hover { border-color: #9CA3AF; }
+  .picker-trigger.has-value { border-color: #1F2937; }
+  .picker-trigger-content { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+  .picker-ref { font-size: 14px; font-weight: 600; color: #1F2937; }
+  .picker-desc {
+    font-size: 12px; color: #6B7280;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-
-  .suggestions {
-    list-style: none; padding: 0; margin: 8px 0 0;
-    background: white; border: 1px solid #E5E7EB; border-radius: 8px;
-    max-height: 220px; overflow-y: auto;
-  }
-  .suggestions li { border-bottom: 1px solid #F3F4F6; }
-  .suggestions li:last-child { border-bottom: none; }
-  .suggestions button {
-    display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
-    width: 100%; background: transparent; border: none; padding: 8px 12px;
-    cursor: pointer; text-align: left; font-size: 13px;
-  }
-  .suggestions button:hover { background: #F3F4F6; }
-  .suggestions .ref { font-weight: 600; color: #1F2937; }
-  .suggestions .desc { font-size: 12px; color: #6B7280; }
-
-  .no-results {
-    margin-top: 8px; padding: 8px 12px; background: white;
-    border: 1px solid #E5E7EB; border-radius: 8px;
-    text-align: center; color: #9CA3AF; font-size: 13px;
-  }
+  .picker-placeholder { font-size: 14px; color: #9CA3AF; flex: 1; }
 
   .form-row {
     display: flex; gap: 12px; align-items: flex-end; margin-top: 12px;
@@ -340,4 +380,102 @@
     cursor: pointer; transition: all 0.2s; flex-shrink: 0;
   }
   .btn-icon-delete:hover { background: #FEE2E2; border-color: #FECACA; }
+
+  /* Picker modal */
+  .picker-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2000; padding: 0;
+  }
+  .picker-modal {
+    background: white;
+    width: 100%; height: 100%;
+    max-width: 560px; max-height: 100vh;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  @media (min-width: 640px) {
+    .picker-overlay { padding: 20px; }
+    .picker-modal {
+      max-height: 85vh; height: auto;
+      border-radius: 16px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .picker-header {
+    display: grid;
+    grid-template-columns: 40px 1fr 40px;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #E5E7EB;
+    flex-shrink: 0;
+  }
+  .picker-header h3 {
+    margin: 0; font-size: 16px; font-weight: 600; color: #1F2937;
+    text-align: center;
+  }
+  .picker-close {
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 8px; border: none;
+    background: transparent; color: #6B7280; cursor: pointer; transition: all 0.2s;
+  }
+  .picker-close:hover { background: #F3F4F6; color: #1F2937; }
+  .picker-spacer { width: 36px; }
+
+  .picker-search {
+    display: flex; align-items: center; gap: 8px;
+    margin: 12px 16px;
+    background: #F3F4F6; border-radius: 10px;
+    padding: 10px 12px;
+    flex-shrink: 0;
+  }
+  .picker-search-input {
+    flex: 1; border: none; outline: none; background: transparent;
+    font-size: 16px; min-width: 0; color: #1F2937;
+  }
+  .picker-search-clear {
+    display: flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 6px; border: none;
+    background: #E5E7EB; color: #6B7280; cursor: pointer; flex-shrink: 0;
+  }
+  .picker-search-clear:hover { background: #D1D5DB; }
+
+  .picker-meta {
+    padding: 0 16px 8px;
+    font-size: 12px; color: #9CA3AF;
+    flex-shrink: 0;
+  }
+
+  .picker-list {
+    list-style: none; margin: 0; padding: 0;
+    overflow-y: auto;
+    flex: 1;
+    -webkit-overflow-scrolling: touch;
+  }
+  .picker-empty {
+    text-align: center; padding: 32px 16px; color: #9CA3AF; font-size: 14px;
+  }
+  .picker-list li {
+    border-bottom: 1px solid #F3F4F6;
+  }
+  .picker-list li:last-child { border-bottom: none; }
+  .picker-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    width: 100%; background: transparent; border: none;
+    padding: 14px 16px; cursor: pointer; text-align: left;
+    transition: background 0.15s;
+  }
+  .picker-item:hover { background: #F9FAFB; }
+  .picker-item:active { background: #F3F4F6; }
+  .picker-item-content {
+    display: flex; flex-direction: column; gap: 2px;
+    min-width: 0; flex: 1;
+  }
+  .picker-item-ref { font-size: 15px; font-weight: 600; color: #1F2937; }
+  .picker-item-desc {
+    font-size: 13px; color: #6B7280;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
 </style>
