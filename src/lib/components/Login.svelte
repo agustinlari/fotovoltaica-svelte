@@ -72,7 +72,7 @@
       <div class="logo-icon">
         <Sun size={32} strokeWidth={1.5} />
       </div>
-      <h1>Fotovoltaica</h1>
+      <h1>Gestión de descargas FV</h1>
       <p>Inicia sesion para acceder al sistema</p>
     </div>
 

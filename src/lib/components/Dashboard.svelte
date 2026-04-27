@@ -54,8 +54,8 @@
     },
     {
       id: 'pallets',
-      title: 'Pallets',
-      description: 'Seguimiento de pallets y contenido',
+      title: 'Módulos',
+      description: 'Seguimiento de módulos y contenido',
       icon: Package,
       color: '#F59E0B'
     },

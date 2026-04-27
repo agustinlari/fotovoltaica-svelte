@@ -37,7 +37,7 @@
   <main>
     <header class="app-header">
       {#if currentView === 'dashboard'}
-        <h1>Fotovoltaica</h1>
+        <h1>Gestión de descargas FV</h1>
         <div class="user-info">
           <span class="welcome-text">{$currentUser?.name || $currentUser?.email}</span>
           <button class="logout-btn" on:click={handleLogout} title="Cerrar sesión">
